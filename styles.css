@@ -133,7 +133,7 @@ button,
 }
 
 .app.compact-layout .dino-canvas {
-  height: clamp(124px, 22dvh, 178px);
+  height: 100%;
 }
 
 .hero {
@@ -737,7 +737,7 @@ button,
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  gap: clamp(4px, 0.9dvh, 8px);
+  gap: clamp(2px, 0.55dvh, 6px);
   padding-top: clamp(18px, 3.2dvh, 34px);
 }
 
@@ -759,7 +759,7 @@ button,
   justify-content: center;
   align-items: flex-end;
   gap: clamp(20px, 9vw, 54px);
-  margin-top: clamp(6px, 1.2dvh, 12px);
+  margin-top: clamp(14px, 2.8dvh, 28px);
 }
 
 .stat-item {
@@ -787,7 +787,8 @@ button,
 }
 
 .game-wrap {
-  margin-top: clamp(2px, 0.4dvh, 6px);
+  flex: 1;
+  margin-top: 0;
   min-height: 0;
   border: 0;
   border-radius: 0;
@@ -799,7 +800,9 @@ button,
 
 .dino-canvas {
   width: 100%;
-  height: clamp(148px, 26dvh, 208px);
+  height: 100%;
+  min-height: 0;
+  display: block;
   border-radius: 0;
   background: linear-gradient(180deg, #f8f9ff 0%, #ecefff 100%);
   border: 0;
@@ -1031,6 +1034,6 @@ button,
   }
 
   .dino-canvas {
-    height: clamp(116px, 19dvh, 152px);
+    height: 100%;
   }
 }

@@ -693,7 +693,7 @@ function initDinoGame() {
     status: "idle",
     score: 0,
     best: Number(localStorage.getItem("dino_best") || 0),
-    speed: 1.55,
+    speed: 2.1,
     gravity: 0.42,
     jumpPower: -13.05,
     groundY: dinoCanvas.height - 20,
@@ -709,8 +709,13 @@ function initDinoGame() {
       vy: 0,
     },
   };
-  const frameMs = 1000 / 60;
+  const baseSpeed = 2.1;
+  const maxSpeedGain = 1.1;
+  const fixedStepMs = 1000 / 60;
+  const maxDeltaMs = 250;
+  const maxSimulationMsPerFrame = 500;
   let lastFrameAt = 0;
+  let accumulatorMs = 0;
   const bgGradient = ctx.createLinearGradient(0, 0, 0, dinoCanvas.height);
   bgGradient.addColorStop(0, "#fbfcff");
   bgGradient.addColorStop(1, "#edf0ff");
@@ -740,13 +745,14 @@ function initDinoGame() {
     game.running = true;
     game.status = "running";
     game.score = 0;
-    game.speed = 1.55;
+    game.speed = baseSpeed;
     game.spawnTimer = 0;
     game.spawnInterval = 132;
     game.obstacles = [];
     game.dino.y = game.groundY - game.dino.h;
     game.dino.vy = 0;
     lastFrameAt = 0;
+    accumulatorMs = 0;
     if (gameMeta) {
       gameMeta.textContent = "Игра запущена. Нажимайте на экран для прыжка.";
     }
@@ -780,6 +786,7 @@ function initDinoGame() {
     game.status = "gameover";
     cancelAnimationFrame(game.rafId);
     lastFrameAt = 0;
+    accumulatorMs = 0;
     const scoreRounded = Math.floor(game.score);
     if (scoreRounded > game.best) {
       game.best = scoreRounded;
@@ -792,15 +799,15 @@ function initDinoGame() {
     render();
   }
 
-  function update(step) {
-    game.dino.vy += game.gravity * step;
-    game.dino.y += game.dino.vy * step;
+  function update() {
+    game.dino.vy += game.gravity;
+    game.dino.y += game.dino.vy;
     if (game.dino.y > game.groundY - game.dino.h) {
       game.dino.y = game.groundY - game.dino.h;
       game.dino.vy = 0;
     }
 
-    game.spawnTimer += step;
+    game.spawnTimer += 1;
     if (game.spawnTimer >= game.spawnInterval) {
       spawnObstacle();
     }
@@ -813,7 +820,7 @@ function initDinoGame() {
     };
 
     for (const obstacle of game.obstacles) {
-      obstacle.x -= game.speed * step;
+      obstacle.x -= game.speed;
       if (collides(body, obstacle)) {
         endGame();
         return;
@@ -821,9 +828,8 @@ function initDinoGame() {
     }
     game.obstacles = game.obstacles.filter((obstacle) => obstacle.x + obstacle.w > -10);
 
-    game.score += 0.05 * step;
-    game.speed = 1.55 + Math.min(0.9, game.score / 420);
-    updateStats();
+    game.score += 0.05;
+    game.speed = baseSpeed + Math.min(maxSpeedGain, game.score / 420);
   }
 
   function render() {
@@ -881,13 +887,26 @@ function initDinoGame() {
 
   function frame(timestamp) {
     if (!game.running) return;
-    let deltaMs = frameMs;
-    if (lastFrameAt) {
-      deltaMs = Math.min(50, timestamp - lastFrameAt);
+    if (!lastFrameAt) {
+      lastFrameAt = timestamp;
     }
+    const rawDeltaMs = Math.max(0, timestamp - lastFrameAt);
+    const deltaMs = Math.min(maxDeltaMs, rawDeltaMs);
     lastFrameAt = timestamp;
-    const step = Math.max(0.35, deltaMs / frameMs);
-    update(step);
+    accumulatorMs += deltaMs;
+
+    let simulatedMs = 0;
+    while (accumulatorMs >= fixedStepMs && game.running) {
+      update();
+      accumulatorMs -= fixedStepMs;
+      simulatedMs += fixedStepMs;
+      if (simulatedMs >= maxSimulationMsPerFrame) {
+        accumulatorMs = 0;
+        break;
+      }
+    }
+
+    updateStats();
     render();
     if (game.running) {
       game.rafId = requestAnimationFrame(frame);
@@ -922,6 +941,12 @@ function initDinoGame() {
       } else {
         jump();
       }
+    }
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      lastFrameAt = 0;
+      accumulatorMs = 0;
     }
   });
 
