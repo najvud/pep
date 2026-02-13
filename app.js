@@ -681,8 +681,11 @@ function initNewsPrototype() {
 function initDinoGame() {
   if (!dinoCanvas) return;
 
-  const ctx = dinoCanvas.getContext("2d");
+  const ctx =
+    dinoCanvas.getContext("2d", { alpha: false, desynchronized: true }) ||
+    dinoCanvas.getContext("2d");
   if (!ctx) return;
+  ctx.imageSmoothingEnabled = true;
   const professorSprite = new Image();
   let professorSpriteReady = false;
   const game = {
@@ -706,6 +709,11 @@ function initDinoGame() {
       vy: 0,
     },
   };
+  const frameMs = 1000 / 60;
+  let lastFrameAt = 0;
+  const bgGradient = ctx.createLinearGradient(0, 0, 0, dinoCanvas.height);
+  bgGradient.addColorStop(0, "#fbfcff");
+  bgGradient.addColorStop(1, "#edf0ff");
 
   function updateStats() {
     if (scoreValue) {
@@ -738,6 +746,7 @@ function initDinoGame() {
     game.obstacles = [];
     game.dino.y = game.groundY - game.dino.h;
     game.dino.vy = 0;
+    lastFrameAt = 0;
     if (gameMeta) {
       gameMeta.textContent = "Игра запущена. Нажимайте на экран для прыжка.";
     }
@@ -770,6 +779,7 @@ function initDinoGame() {
     game.running = false;
     game.status = "gameover";
     cancelAnimationFrame(game.rafId);
+    lastFrameAt = 0;
     const scoreRounded = Math.floor(game.score);
     if (scoreRounded > game.best) {
       game.best = scoreRounded;
@@ -782,15 +792,15 @@ function initDinoGame() {
     render();
   }
 
-  function update() {
-    game.dino.vy += game.gravity;
-    game.dino.y += game.dino.vy;
+  function update(step) {
+    game.dino.vy += game.gravity * step;
+    game.dino.y += game.dino.vy * step;
     if (game.dino.y > game.groundY - game.dino.h) {
       game.dino.y = game.groundY - game.dino.h;
       game.dino.vy = 0;
     }
 
-    game.spawnTimer += 1;
+    game.spawnTimer += step;
     if (game.spawnTimer >= game.spawnInterval) {
       spawnObstacle();
     }
@@ -803,7 +813,7 @@ function initDinoGame() {
     };
 
     for (const obstacle of game.obstacles) {
-      obstacle.x -= game.speed;
+      obstacle.x -= game.speed * step;
       if (collides(body, obstacle)) {
         endGame();
         return;
@@ -811,17 +821,14 @@ function initDinoGame() {
     }
     game.obstacles = game.obstacles.filter((obstacle) => obstacle.x + obstacle.w > -10);
 
-    game.score += 0.05;
+    game.score += 0.05 * step;
     game.speed = 1.55 + Math.min(0.9, game.score / 420);
     updateStats();
   }
 
   function render() {
     ctx.clearRect(0, 0, dinoCanvas.width, dinoCanvas.height);
-    const bg = ctx.createLinearGradient(0, 0, 0, dinoCanvas.height);
-    bg.addColorStop(0, "#fbfcff");
-    bg.addColorStop(1, "#edf0ff");
-    ctx.fillStyle = bg;
+    ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, dinoCanvas.width, dinoCanvas.height);
 
     ctx.strokeStyle = "#951b81";
@@ -832,7 +839,6 @@ function initDinoGame() {
     ctx.stroke();
 
     if (professorSpriteReady) {
-      ctx.imageSmoothingEnabled = true;
       ctx.drawImage(
         professorSprite,
         game.dino.x,
@@ -873,9 +879,15 @@ function initDinoGame() {
     }
   }
 
-  function frame() {
+  function frame(timestamp) {
     if (!game.running) return;
-    update();
+    let deltaMs = frameMs;
+    if (lastFrameAt) {
+      deltaMs = Math.min(50, timestamp - lastFrameAt);
+    }
+    lastFrameAt = timestamp;
+    const step = Math.max(0.35, deltaMs / frameMs);
+    update(step);
     render();
     if (game.running) {
       game.rafId = requestAnimationFrame(frame);
