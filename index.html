@@ -1,0 +1,281 @@
+﻿<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reception Connect</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero reveal">
+        <div class="hero-logo-wrap">
+          <a id="logoReloadLink" class="hero-logo-link" href="./" aria-label="Обновить страницу">
+            <img class="hero-logo" src="./assets/logo.svg" alt="Логотип компании" />
+          </a>
+        </div>
+        <p class="hero-welcome">Приветствуем вас на Переговорах!</p>
+      </header>
+
+      <section class="menu-grid reveal">
+        <button class="menu-btn active" data-target="news" type="button">
+          <span class="menu-title">Новости компании</span>
+          <span class="menu-hint">Короткие обновления на сегодня</span>
+        </button>
+        <button class="menu-btn" data-target="drinks" type="button">
+          <span class="menu-title">Напитки</span>
+          <span class="menu-hint">Кофе, чай, вода, лимонад</span>
+        </button>
+        <button class="menu-btn" data-target="support" type="button">
+          <span class="menu-title">Тех. специалист</span>
+          <span class="menu-hint">Вызов в переговорку за 1 минуту</span>
+        </button>
+        <button class="menu-btn" data-target="quiz" type="button">
+          <span class="menu-title">Юридическая викторина</span>
+          <span class="menu-hint">Короткий вопрос по практике</span>
+        </button>
+        <button class="menu-btn" data-target="feedback" type="button">
+          <span class="menu-title">Отзыв о Пепеляев</span>
+          <span class="menu-hint">Оценка сервиса и комментарий</span>
+        </button>
+        <button class="menu-btn" data-target="dino" type="button">
+          <span class="menu-title">Мини-игра</span>
+          <span class="menu-hint">Пока ждете заказ или помощь</span>
+        </button>
+      </section>
+
+      <section id="panel-news" class="panel reveal" data-panel="news">
+        <div class="panel-head">
+          <h2>Новости компании</h2>
+          <span id="newsDate" class="subtle-pill"></span>
+        </div>
+        <div class="news-list">
+          <article class="news-card" data-news-card tabindex="0" role="button">
+            <h3>Новый формат переговоров с клиентами</h3>
+            <p>На 3 этаже открыты 2 дополнительные комнаты для гибридных встреч.</p>
+          </article>
+          <article class="news-card" data-news-card tabindex="0" role="button">
+            <h3>Обновление правил доступа</h3>
+            <p>Для гостевого Wi-Fi используется единый QR-логин на ресепшене.</p>
+          </article>
+          <article class="news-card" data-news-card tabindex="0" role="button">
+            <h3>Пятничный demo day</h3>
+            <p>В 17:30 в зале Orion пройдет открытая презентация продуктовых команд.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="panel-drinks" class="panel hidden" data-panel="drinks">
+        <div class="panel-head">
+          <h2>Напитки</h2>
+          <span class="subtle-pill">Подача: 5-10 мин</span>
+        </div>
+        <div class="panel-room-picker">
+          <label for="drinkRoomSelect">Переговорка для заказа</label>
+          <select id="drinkRoomSelect" name="drinkRoom">
+            <option>Reception</option>
+            <option>Atlas</option>
+            <option>Orion</option>
+            <option>Delta</option>
+            <option>Neva</option>
+          </select>
+          <label for="drinkRecipient">Для кого, Имя/Отчество</label>
+          <input
+            id="drinkRecipient"
+            name="drinkRecipient"
+            type="text"
+            maxlength="70"
+            placeholder="Например, Иван Иванович"
+          />
+        </div>
+        <div class="drink-list">
+          <article class="drink-card">
+            <div>
+              <h3>Эспрессо</h3>
+              <p>Крепкий кофе, 30 мл</p>
+            </div>
+            <button class="action-btn order-btn" data-drink="Эспрессо" type="button">
+              Заказать
+            </button>
+          </article>
+          <article class="drink-card">
+            <div>
+              <h3>Капучино</h3>
+              <p>Кофе с молочной пеной, 250 мл</p>
+            </div>
+            <button class="action-btn order-btn" data-drink="Капучино" type="button">
+              Заказать
+            </button>
+          </article>
+          <article class="drink-card">
+            <div>
+              <h3>Чай зеленый</h3>
+              <p>С жасмином, 300 мл</p>
+            </div>
+            <button class="action-btn order-btn" data-drink="Чай зеленый" type="button">
+              Заказать
+            </button>
+          </article>
+          <article class="drink-card">
+            <div>
+              <h3>Лимонад цитрус</h3>
+              <p>Охлажденный, 300 мл</p>
+            </div>
+            <button class="action-btn order-btn" data-drink="Лимонад цитрус" type="button">
+              Заказать
+            </button>
+          </article>
+        </div>
+      </section>
+
+      <section id="panel-support" class="panel hidden" data-panel="support">
+        <div class="panel-head">
+          <h2>Вызов тех. специалиста</h2>
+          <span class="subtle-pill">Ожидание: ~7 мин</span>
+        </div>
+        <form id="supportForm" class="support-form">
+          <label>
+            Переговорка
+            <select id="roomSelect" name="room" required>
+              <option>Reception</option>
+              <option>Atlas</option>
+              <option>Orion</option>
+              <option>Delta</option>
+              <option>Neva</option>
+            </select>
+          </label>
+          <label>
+            Проблема
+            <select id="issueSelect" name="issue" required>
+              <option value="Нет сигнала на экране">Нет сигнала на экране</option>
+              <option value="Не работает HDMI">Не работает HDMI</option>
+              <option value="Проблемы со звуком">Проблемы со звуком</option>
+              <option value="Проблемы с Wi-Fi">Проблемы с Wi-Fi</option>
+              <option value="Другое">Другое</option>
+            </select>
+          </label>
+          <div class="support-visual" aria-hidden="true"></div>
+          <button class="action-btn submit-btn" type="submit">
+            Вызвать специалиста
+          </button>
+        </form>
+        <p id="supportResult" class="result"></p>
+      </section>
+
+      <section id="panel-quiz" class="panel hidden" data-panel="quiz">
+        <div class="panel-head">
+          <h2>Юридическая викторина</h2>
+          <span id="quizScoreBadge" class="subtle-pill">1 из 15</span>
+        </div>
+        <div class="quiz-wrap">
+          <p id="quizQuestion" class="quiz-question"></p>
+          <div class="quiz-options">
+            <button class="quiz-option" data-option-index="0" type="button"></button>
+            <button class="quiz-option" data-option-index="1" type="button"></button>
+            <button class="quiz-option" data-option-index="2" type="button"></button>
+          </div>
+          <div class="quiz-feedback">
+            <span id="quizMark" class="quiz-mark" aria-hidden="true"></span>
+            <p id="quizResult" class="result"></p>
+          </div>
+        </div>
+      </section>
+
+      <section id="panel-feedback" class="panel hidden" data-panel="feedback">
+        <div class="panel-head">
+          <h2>Отзыв о Пепеляев</h2>
+        </div>
+        <form id="feedbackForm" class="feedback-form">
+          <label>
+            Общая оценка
+            <select id="feedbackScore" name="score" required>
+              <option value="5">Отлично</option>
+              <option value="4">Хорошо</option>
+              <option value="3">Нормально</option>
+              <option value="2">Нужно улучшить</option>
+            </select>
+          </label>
+          <label>
+            Комментарий
+            <textarea
+              id="feedbackText"
+              name="feedback"
+              rows="4"
+              maxlength="220"
+              placeholder="Что понравилось или что можно улучшить?"
+            ></textarea>
+          </label>
+          <button class="action-btn submit-btn" type="submit">Отправить отзыв</button>
+        </form>
+        <p id="feedbackResult" class="result"></p>
+      </section>
+
+      <section id="panel-dino" class="panel hidden" data-panel="dino">
+        <div class="dino-layout">
+          <h2 class="dino-title">PepeliaevJump</h2>
+          <div class="game-stats" aria-live="polite">
+            <div class="stat-item">
+              <span class="stat-label">СЧЕТ</span>
+              <strong id="scoreValue" class="stat-value">0</strong>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">РЕКОРД</span>
+              <strong id="bestValue" class="stat-value">0</strong>
+            </div>
+          </div>
+          <div class="game-wrap">
+            <canvas
+              id="dinoCanvas"
+              class="dino-canvas"
+              width="340"
+              height="165"
+              aria-label="Игра PepeliaevJump"
+            ></canvas>
+          </div>
+          <p id="gameMeta" class="sr-only"></p>
+        </div>
+      </section>
+    </main>
+
+    <section id="newsOverlay" class="news-overlay" aria-hidden="true">
+      <article class="news-overlay-card">
+        <button id="newsBackBtn" class="news-back-btn" type="button">Назад</button>
+        <div
+          id="newsOverlayImage"
+          class="news-overlay-image news-image-1"
+          role="img"
+          aria-label="Иллюстрация новости"
+        ></div>
+        <div class="news-overlay-content">
+          <p id="newsOverlayTag" class="news-overlay-tag">Прототип новости</p>
+          <h3 id="newsOverlayTitle" class="news-overlay-title"></h3>
+          <p id="newsOverlayLead" class="news-overlay-lead"></p>
+          <p id="newsOverlayBody" class="news-overlay-body"></p>
+        </div>
+      </article>
+    </section>
+
+    <section id="orderPopup" class="order-popup" aria-hidden="true">
+      <article class="order-popup-card" role="dialog" aria-modal="true" aria-label="Статус заказа">
+        <h3 id="orderPopupTitle" class="order-popup-title">Заказ принят</h3>
+        <p id="orderPopupMessage" class="order-popup-message"></p>
+      </article>
+    </section>
+
+    <section id="quizFinalOverlay" class="quiz-final-overlay" aria-hidden="true">
+      <div class="quiz-final-card">
+        <p id="quizFinalText" class="quiz-final-text"></p>
+      </div>
+    </section>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
+
