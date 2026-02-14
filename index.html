@@ -10,8 +10,8 @@
       href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css" />
-    <script src="./app.js" defer></script>
+    <link rel="stylesheet" href="./styles.css?v=20260214h" />
+    <script src="./app.js?v=20260214h" defer></script>
   </head>
   <body>
     <main class="app">
@@ -42,8 +42,8 @@
           <span class="menu-hint">Короткий вопрос по практике</span>
         </button>
         <button class="menu-btn" data-target="feedback" type="button">
-          <span class="menu-title">Отзыв о Пепеляев</span>
-          <span class="menu-hint">Оценка сервиса и комментарий</span>
+          <span class="menu-title">Брошюры</span>
+          <span class="menu-hint">Каталог PDF материалов</span>
         </button>
         <button class="menu-btn" data-target="dino" type="button">
           <span class="menu-title">Мини-игра</span>
@@ -57,24 +57,51 @@
           <span id="newsDate" class="subtle-pill"></span>
         </div>
         <div class="news-list">
-          <article class="news-card" data-news-card tabindex="0" role="button">
-            <h3>Новый формат переговоров с клиентами</h3>
-            <p>На 3 этаже открыты 2 дополнительные комнаты для гибридных встреч.</p>
-          </article>
-          <article class="news-card" data-news-card tabindex="0" role="button">
-            <h3>Обновление правил доступа</h3>
-            <p>Для гостевого Wi-Fi используется единый QR-логин на ресепшене.</p>
-          </article>
-          <article class="news-card" data-news-card tabindex="0" role="button">
-            <h3>Пятничный demo day</h3>
-            <p>В 17:30 в зале Orion пройдет открытая презентация продуктовых команд.</p>
-          </article>
+          <a class="news-card news-link-card" href="./news/news-2026-02-11.html" aria-label="Открыть новость за 11.02.2026">
+            <div class="news-card-content">
+              <p class="news-card-date">11.02.2026</p>
+              <h3>
+                «Пепеляев Групп» и Rajah & Tann Asia расширяют присутствие на китайском рынке
+              </h3>
+              <p>
+                Стороны усиливают взаимодействие в рамках International Desk для сопровождения
+                трансграничных проектов.
+              </p>
+              <span class="news-card-open">Открыть новость</span>
+            </div>
+          </a>
+          <a class="news-card news-link-card" href="./news/news-2026-02-06.html" aria-label="Открыть новость за 06.02.2026">
+            <div class="news-card-content">
+              <p class="news-card-date">06.02.2026</p>
+              <h3>Эксперты «Пепеляев Групп» вошли в рейтинг PRO BONO-300</h3>
+              <p>
+                Юристы фирмы отмечены в первом рейтинге лучших pro bono-практик при поддержке
+                Правительства Москвы.
+              </p>
+              <span class="news-card-open">Открыть новость</span>
+            </div>
+          </a>
+          <a class="news-card news-link-card" href="./news/news-2026-01-13.html" aria-label="Открыть новость за 13.01.2026">
+            <div class="news-card-content">
+              <p class="news-card-date">13.01.2026</p>
+              <h3>
+                Советник «Пепеляев Групп» выступила на Russia and CIS Hotel Investment Conference
+              </h3>
+              <p>
+                Наталья Присекина приняла участие в отраслевой конференции по инвестициям в
+                гостиничный бизнес.
+              </p>
+              <span class="news-card-open">Открыть новость</span>
+            </div>
+          </a>
         </div>
       </section>
 
       <section id="panel-drinks" class="panel hidden" data-panel="drinks">
+        <button id="companyOrderOpenBtn" class="action-btn company-order-open-btn" type="button">
+          Заказать на компанию
+        </button>
         <div class="panel-head">
-          <h2>Напитки</h2>
           <span class="subtle-pill">Подача: 5-10 мин</span>
         </div>
         <div class="panel-room-picker">
@@ -97,40 +124,175 @@
         </div>
         <div class="drink-list">
           <article class="drink-card">
-            <div>
+            <div class="drink-info">
               <h3>Эспрессо</h3>
               <p>Крепкий кофе, 30 мл</p>
             </div>
-            <button class="action-btn order-btn" data-drink="Эспрессо" type="button">
-              Заказать
-            </button>
+            <div class="drink-actions">
+              <div class="drink-qty-block">
+                <span class="drink-qty-caption">Кол-во</span>
+                <div class="drink-stepper" role="group" aria-label="Количество напитка">
+                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
+                  <span class="drink-qty-value" aria-live="polite">1</span>
+                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
+                </div>
+              </div>
+              <button class="action-btn order-btn" data-drink="Эспрессо" type="button">
+                Заказать
+              </button>
+            </div>
           </article>
           <article class="drink-card">
-            <div>
+            <div class="drink-info">
               <h3>Капучино</h3>
               <p>Кофе с молочной пеной, 250 мл</p>
             </div>
-            <button class="action-btn order-btn" data-drink="Капучино" type="button">
-              Заказать
-            </button>
+            <div class="drink-actions">
+              <div class="drink-qty-block">
+                <span class="drink-qty-caption">Кол-во</span>
+                <div class="drink-stepper" role="group" aria-label="Количество напитка">
+                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
+                  <span class="drink-qty-value" aria-live="polite">1</span>
+                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
+                </div>
+              </div>
+              <button class="action-btn order-btn" data-drink="Капучино" type="button">
+                Заказать
+              </button>
+            </div>
           </article>
           <article class="drink-card">
-            <div>
+            <div class="drink-info">
               <h3>Чай зеленый</h3>
               <p>С жасмином, 300 мл</p>
             </div>
-            <button class="action-btn order-btn" data-drink="Чай зеленый" type="button">
-              Заказать
-            </button>
+            <div class="drink-actions">
+              <div class="drink-qty-block">
+                <span class="drink-qty-caption">Кол-во</span>
+                <div class="drink-stepper" role="group" aria-label="Количество напитка">
+                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
+                  <span class="drink-qty-value" aria-live="polite">1</span>
+                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
+                </div>
+              </div>
+              <button class="action-btn order-btn" data-drink="Чай зеленый" type="button">
+                Заказать
+              </button>
+            </div>
           </article>
           <article class="drink-card">
-            <div>
+            <div class="drink-info">
               <h3>Лимонад цитрус</h3>
               <p>Охлажденный, 300 мл</p>
             </div>
-            <button class="action-btn order-btn" data-drink="Лимонад цитрус" type="button">
-              Заказать
-            </button>
+            <div class="drink-actions">
+              <div class="drink-qty-block">
+                <span class="drink-qty-caption">Кол-во</span>
+                <div class="drink-stepper" role="group" aria-label="Количество напитка">
+                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
+                  <span class="drink-qty-value" aria-live="polite">1</span>
+                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
+                </div>
+              </div>
+              <button class="action-btn order-btn" data-drink="Лимонад цитрус" type="button">
+                Заказать
+              </button>
+            </div>
+          </article>
+          <article class="drink-card">
+            <div class="drink-info">
+              <h3>Американо</h3>
+              <p>Классический кофе, 180 мл</p>
+            </div>
+            <div class="drink-actions">
+              <div class="drink-qty-block">
+                <span class="drink-qty-caption">Кол-во</span>
+                <div class="drink-stepper" role="group" aria-label="Количество напитка">
+                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
+                  <span class="drink-qty-value" aria-live="polite">1</span>
+                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
+                </div>
+              </div>
+              <button class="action-btn order-btn" data-drink="Американо" type="button">
+                Заказать
+              </button>
+            </div>
+          </article>
+          <article class="drink-card">
+            <div class="drink-info">
+              <h3>Латте</h3>
+              <p>Мягкий молочный кофе, 300 мл</p>
+            </div>
+            <div class="drink-actions">
+              <div class="drink-qty-block">
+                <span class="drink-qty-caption">Кол-во</span>
+                <div class="drink-stepper" role="group" aria-label="Количество напитка">
+                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
+                  <span class="drink-qty-value" aria-live="polite">1</span>
+                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
+                </div>
+              </div>
+              <button class="action-btn order-btn" data-drink="Латте" type="button">
+                Заказать
+              </button>
+            </div>
+          </article>
+          <article class="drink-card">
+            <div class="drink-info">
+              <h3>Чай Earl Grey</h3>
+              <p>Черный чай с бергамотом, 300 мл</p>
+            </div>
+            <div class="drink-actions">
+              <div class="drink-qty-block">
+                <span class="drink-qty-caption">Кол-во</span>
+                <div class="drink-stepper" role="group" aria-label="Количество напитка">
+                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
+                  <span class="drink-qty-value" aria-live="polite">1</span>
+                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
+                </div>
+              </div>
+              <button class="action-btn order-btn" data-drink="Чай Earl Grey" type="button">
+                Заказать
+              </button>
+            </div>
+          </article>
+          <article class="drink-card">
+            <div class="drink-info">
+              <h3>Минеральная вода</h3>
+              <p>Газ/негаз на выбор, 500 мл</p>
+            </div>
+            <div class="drink-actions">
+              <div class="drink-qty-block">
+                <span class="drink-qty-caption">Кол-во</span>
+                <div class="drink-stepper" role="group" aria-label="Количество напитка">
+                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
+                  <span class="drink-qty-value" aria-live="polite">1</span>
+                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
+                </div>
+              </div>
+              <button class="action-btn order-btn" data-drink="Минеральная вода" type="button">
+                Заказать
+              </button>
+            </div>
+          </article>
+          <article class="drink-card">
+            <div class="drink-info">
+              <h3>Апельсиновый сок</h3>
+              <p>Охлажденный, 250 мл</p>
+            </div>
+            <div class="drink-actions">
+              <div class="drink-qty-block">
+                <span class="drink-qty-caption">Кол-во</span>
+                <div class="drink-stepper" role="group" aria-label="Количество напитка">
+                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
+                  <span class="drink-qty-value" aria-live="polite">1</span>
+                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
+                </div>
+              </div>
+              <button class="action-btn order-btn" data-drink="Апельсиновый сок" type="button">
+                Заказать
+              </button>
+            </div>
           </article>
         </div>
       </section>
@@ -189,32 +351,214 @@
       </section>
 
       <section id="panel-feedback" class="panel hidden" data-panel="feedback">
-        <div class="panel-head">
-          <h2>Отзыв о Пепеляев</h2>
+        <div class="brochure-list">
+          <article class="brochure-card">
+            <a
+              class="brochure-link"
+              data-brochure-title="Сделаем Ваш бизнес эффективным. Презентация о компании"
+              href="https://www.pgplaw.ru/upload/iblock/a45/zv3zrzf7ip2nxh4etrposuvd9tfwppbt/Pepeliaev-Group-Presentation-16.12.25.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+<img
+              class="brochure-thumb"
+              src="https://www.pgplaw.ru/upload/iblock/1eb/4d8y5sx26kfurwi7k7lsslz2p2ro3u9h/oblozhka_prezentatsiya.png"
+              alt="Превью брошюры: Сделаем Ваш бизнес эффективным. Презентация о компании"
+              loading="lazy"
+            />
+            <h3>Сделаем Ваш бизнес эффективным. Презентация о компании</h3>
+            </a>
+          </article>
+          <article class="brochure-card">
+            <a
+              class="brochure-link"
+              data-brochure-title="Налоговая практика. Презентация"
+              href="https://www.pgplaw.ru/upload/iblock/25c/939xmihbrpemdbtbvttd7h9p2jq6lnxf/2025_Tax-practice_rus.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+<img
+              class="brochure-thumb"
+              src="https://www.pgplaw.ru/upload/iblock/e5c/xkmky8msgbhdd4qav7jhocpi4g4nqctv/nalogi_prezentatsiya.png"
+              alt="Превью брошюры: Налоговая практика. Презентация"
+              loading="lazy"
+            />
+            <h3>Налоговая практика. Презентация</h3>
+            </a>
+          </article>
+          <article class="brochure-card">
+            <a
+              class="brochure-link"
+              data-brochure-title="Корпоративная практика. Презентация"
+              href="https://www.pgplaw.ru/upload/iblock/45e/t0w39qeq8e8e9no8jsbm1dwpanr6rrwz/2025_Corporate_rus.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+<img
+              class="brochure-thumb"
+              src="https://www.pgplaw.ru/upload/medialibrary/dfe/9ivjgmulbxmvzgxq3ambpjr2rlb6ism6/corporate_pres_cover.png"
+              alt="Превью брошюры: Корпоративная практика. Презентация"
+              loading="lazy"
+            />
+            <h3>Корпоративная практика. Презентация</h3>
+            </a>
+          </article>
+          <article class="brochure-card">
+            <a
+              class="brochure-link"
+              data-brochure-title="Практика разрешения споров и медиации. Презентация"
+              href="https://www.pgplaw.ru/upload/iblock/bf1/falcuwcm9khg3h258mydeuu4bsry1s55/2025.11_DR-Practice_rus.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+<img
+              class="brochure-thumb"
+              src="https://www.pgplaw.ru/upload/medialibrary/43f/xign3c7y4udgivy007ks9m3vin10snlx/dr_pres_cover.png"
+              alt="Превью брошюры: Практика разрешения споров и медиации. Презентация"
+              loading="lazy"
+            />
+            <h3>Практика разрешения споров и медиации. Презентация</h3>
+            </a>
+          </article>
+          <article class="brochure-card">
+            <a
+              class="brochure-link"
+              data-brochure-title="Антимонопольная практика. Презентация"
+              href="https://www.pgplaw.ru/upload/iblock/bc9/uqz2dnfla86scz59k9we4zzzn4mw1zms/2025_Antimonopolnaya_rus-_ID-176128_.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+<img
+              class="brochure-thumb"
+              src="https://www.pgplaw.ru/upload/medialibrary/13c/guvjkxdpx0gwr1528ao5l66fiz5dbpi7/animonopolnaya_prezentatsiya.png"
+              alt="Превью брошюры: Антимонопольная практика. Презентация"
+              loading="lazy"
+            />
+            <h3>Антимонопольная практика. Презентация</h3>
+            </a>
+          </article>
+          <article class="brochure-card">
+            <a
+              class="brochure-link"
+              data-brochure-title="Таможенное право и внешнеторговое регулирование. Презентация практики"
+              href="https://www.pgplaw.ru/upload/iblock/d1e/ose737qbfzmv2clv4vz1ikkvfjvl6u5m/2025_custom-practice_pres_rus.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+<img
+              class="brochure-thumb"
+              src="https://www.pgplaw.ru/upload/medialibrary/112/6b029d1r2b753c7m2hfxserhpbrzyhbs/custom_cover.png"
+              alt="Превью брошюры: Таможенное право и внешнеторговое регулирование. Презентация практики"
+              loading="lazy"
+            />
+            <h3>Таможенное право и внешнеторговое регулирование. Презентация практики</h3>
+            </a>
+          </article>
+          <article class="brochure-card">
+            <a
+              class="brochure-link"
+              data-brochure-title="Уголовно-правовая защита бизнеса. Презентация"
+              href="https://www.pgplaw.ru/upload/iblock/937/9cphpwh3zimjqvk4q7h828w9198nok92/2025_Ugolovno_pravovaya-zashchita-biznesa-_ID-225948_.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+<img
+              class="brochure-thumb"
+              src="https://www.pgplaw.ru/upload/iblock/a55/ng98z0meqii7uq0lu4l2wp0pbc2gej1v/ugolovnaya_prezentatsiya.png"
+              alt="Превью брошюры: Уголовно-правовая защита бизнеса. Презентация"
+              loading="lazy"
+            />
+            <h3>Уголовно-правовая защита бизнеса. Презентация</h3>
+            </a>
+          </article>
+          <article class="brochure-card">
+            <a
+              class="brochure-link"
+              data-brochure-title="Банкротство и антикризисная защита бизнеса. Брошюра практики"
+              href="https://www.pgplaw.ru/upload/iblock/cbf/b2e91dbnykapkj8n1713neu5lxigerjh/2024_Bankruptcy_RUS_WEB.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+<img
+              class="brochure-thumb"
+              src="https://www.pgplaw.ru/upload/iblock/76c/26txi66ydq8vcq6wcy63xhzm45j52z4k/bankrotstvo_broshyura.png"
+              alt="Превью брошюры: Банкротство и антикризисная защита бизнеса. Брошюра практики"
+              loading="lazy"
+            />
+            <h3>Банкротство и антикризисная защита бизнеса. Брошюра практики</h3>
+            </a>
+          </article>
+          <article class="brochure-card">
+            <a
+              class="brochure-link"
+              data-brochure-title="Кому могут быть полезны услуги практики банкротства и антикризисной защиты бизнеса"
+              href="https://www.pgplaw.ru/upload/iblock/3ec/11h77se86kpojy1qm50m5bbfxi5t3hot/2024_Komu-mogut-byt-polezny-uslugi-praktiki-bankrotstva-_ID-181643_.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+<img
+              class="brochure-thumb"
+              src="https://www.pgplaw.ru/upload/iblock/ea3/dpjm2i15d4wl4teinsbaoa2lfqiqa0ml/cover_bancruptcy_pres.jpg"
+              alt="Превью брошюры: Кому могут быть полезны услуги практики банкротства и антикризисной защиты бизнеса"
+              loading="lazy"
+            />
+            <h3>
+              Кому могут быть полезны услуги практики банкротства и антикризисной защиты бизнеса
+            </h3>
+            </a>
+          </article>
+          <article class="brochure-card">
+            <a
+              class="brochure-link"
+              data-brochure-title="Трудовое и миграционное право. Презентация практики"
+              href="https://www.pgplaw.ru/upload/iblock/a6c/cb41ywb9dmbj1r72oqb4apj084y4xkbs/2025_Trudovaya_prezentatsiya_rus-_ID-176147_.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+<img
+              class="brochure-thumb"
+              src="https://www.pgplaw.ru/upload/iblock/fbb/pacg283s56zohwshzft033fs5ad7vlr1/trudovaya_prezentatsiya.png"
+              alt="Превью брошюры: Трудовое и миграционное право. Презентация практики"
+              loading="lazy"
+            />
+            <h3>Трудовое и миграционное право. Презентация практики</h3>
+            </a>
+          </article>
+          <article class="brochure-card">
+            <a
+              class="brochure-link"
+              data-brochure-title="Административно-правовая защита бизнеса. Презентация практики"
+              href="https://www.pgplaw.ru/upload/iblock/b86/jt7fq2lk2e2aokpuh0zhkaw4vsxdeu0v/2025_Administrativno-_-pravovaya-_ID-181054_.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+<img
+              class="brochure-thumb"
+              src="https://www.pgplaw.ru/upload/medialibrary/9b8/m0231imp3w8icw72exzloiuiaitvh9by/admin_cover.png"
+              alt="Превью брошюры: Административно-правовая защита бизнеса. Презентация практики"
+              loading="lazy"
+            />
+            <h3>Административно-правовая защита бизнеса. Презентация практики</h3>
+            </a>
+          </article>
+          <article class="brochure-card">
+            <a
+              class="brochure-link"
+              data-brochure-title="Интеллектуальная собственность и товарные знаки. Презентация практики"
+              href="https://www.pgplaw.ru/upload/iblock/644/ik4xoj6a1ltgtfoqd8qia5ytzay6a53c/2025_IP_rus_Verdana-_ID-176149_.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+<img
+              class="brochure-thumb"
+              src="https://www.pgplaw.ru/upload/iblock/510/3akzb44or2h7rqb37ifpncse1yt40fgy/ip_prezentatsiya.png"
+              alt="Превью брошюры: Интеллектуальная собственность и товарные знаки. Презентация практики"
+              loading="lazy"
+            />
+            <h3>Интеллектуальная собственность и товарные знаки. Презентация практики</h3>
+            </a>
+          </article>
         </div>
-        <form id="feedbackForm" class="feedback-form">
-          <label>
-            Общая оценка
-            <select id="feedbackScore" name="score" required>
-              <option value="5">Отлично</option>
-              <option value="4">Хорошо</option>
-              <option value="3">Нормально</option>
-              <option value="2">Нужно улучшить</option>
-            </select>
-          </label>
-          <label>
-            Комментарий
-            <textarea
-              id="feedbackText"
-              name="feedback"
-              rows="4"
-              maxlength="220"
-              placeholder="Что понравилось или что можно улучшить?"
-            ></textarea>
-          </label>
-          <button class="action-btn submit-btn" type="submit">Отправить отзыв</button>
-        </form>
-        <p id="feedbackResult" class="result"></p>
       </section>
 
       <section id="panel-dino" class="panel hidden" data-panel="dino">
@@ -269,6 +613,31 @@
       </article>
     </section>
 
+    <section id="companyOrderModal" class="company-order-modal" aria-hidden="true">
+      <article class="company-order-card" role="dialog" aria-modal="true" aria-label="Заказ на компанию">
+        <div class="company-order-head">
+          <h3>Заказать на компанию</h3>
+          <button id="companyOrderCloseBtn" class="company-order-close" type="button" aria-label="Закрыть">
+            Закрыть
+          </button>
+        </div>
+        <form id="companyOrderForm" class="company-order-form">
+          <label for="companyOrderRoomSelect">Переговорка</label>
+          <select id="companyOrderRoomSelect" name="companyOrderRoom"></select>
+          <label for="companyOrderCompanyInput">Название компании</label>
+          <input
+            id="companyOrderCompanyInput"
+            name="companyOrderCompany"
+            type="text"
+            maxlength="80"
+            placeholder="Например, ООО Вектор"
+          />
+          <div id="companyOrderItems" class="company-order-items"></div>
+          <button class="action-btn company-order-submit" type="submit">Заказать</button>
+        </form>
+      </article>
+    </section>
+
     <section id="quizFinalOverlay" class="quiz-final-overlay" aria-hidden="true">
       <div class="quiz-final-card">
         <p id="quizFinalText" class="quiz-final-text"></p>
@@ -278,4 +647,7 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
   </body>
 </html>
+
+
+
 

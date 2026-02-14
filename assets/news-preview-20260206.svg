@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">PGP News Preview</title>
+  <desc id="desc">Preview image for PGP news dated 06.02.2026</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f6f0f9" />
+      <stop offset="100%" stop-color="#edf2fb" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)" />
+  <rect x="66" y="80" width="1068" height="515" rx="28" fill="#ffffff" opacity="0.93" />
+  <rect x="106" y="126" width="292" height="56" rx="28" fill="#951b81" />
+  <text x="148" y="163" fill="#ffffff" font-size="30" font-family="Montserrat, Arial, sans-serif" font-weight="700">PRO BONO</text>
+  <text x="106" y="250" fill="#2e3550" font-size="66" font-family="Montserrat, Arial, sans-serif" font-weight="700">PGP Experts</text>
+  <text x="106" y="330" fill="#2e3550" font-size="66" font-family="Montserrat, Arial, sans-serif" font-weight="700">in PRO BONO-300</text>
+  <text x="106" y="418" fill="#6f7690" font-size="34" font-family="Montserrat, Arial, sans-serif" font-weight="600">Recognition of social legal practice</text>
+  <text x="106" y="518" fill="#951b81" font-size="38" font-family="Montserrat, Arial, sans-serif" font-weight="700">06.02.2026</text>
+  <circle cx="960" cy="208" r="112" fill="#f3e3f3" />
+  <circle cx="960" cy="208" r="66" fill="#951b81" opacity="0.85" />
+  <circle cx="960" cy="208" r="28" fill="#ffffff" />
+</svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">PGP News Preview</title>
+  <desc id="desc">Preview image for PGP news dated 11.02.2026</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7eff8" />
+      <stop offset="100%" stop-color="#e9edf8" />
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#951b81" />
+      <stop offset="100%" stop-color="#6e7aa9" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)" />
+  <circle cx="1040" cy="110" r="120" fill="#ffffff" opacity="0.65" />
+  <circle cx="980" cy="560" r="170" fill="#ffffff" opacity="0.5" />
+  <rect x="70" y="90" width="560" height="18" rx="9" fill="url(#line)" opacity="0.95" />
+  <rect x="70" y="128" width="420" height="10" rx="5" fill="#6f7690" opacity="0.6" />
+  <rect x="70" y="220" width="1060" height="2" fill="#cfd5e8" />
+  <text x="70" y="185" fill="#951b81" font-size="52" font-family="Montserrat, Arial, sans-serif" font-weight="700">PGP NEWS</text>
+  <text x="70" y="295" fill="#2e3550" font-size="58" font-family="Montserrat, Arial, sans-serif" font-weight="700">International Desk</text>
+  <text x="70" y="365" fill="#2e3550" font-size="58" font-family="Montserrat, Arial, sans-serif" font-weight="700">China market expansion</text>
+  <text x="70" y="470" fill="#6f7690" font-size="34" font-family="Montserrat, Arial, sans-serif" font-weight="600">11.02.2026</text>
+  <rect x="70" y="525" width="310" height="62" rx="31" fill="#951b81" />
+  <text x="111" y="566" fill="#ffffff" font-size="30" font-family="Montserrat, Arial, sans-serif" font-weight="700">Pepeliaev Group</text>
+</svg>

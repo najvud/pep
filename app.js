@@ -11,6 +11,13 @@ const panels = Array.from(document.querySelectorAll(".panel"));
 const roomSelect = document.getElementById("roomSelect");
 const drinkRoomSelect = document.getElementById("drinkRoomSelect");
 const drinkRecipientInput = document.getElementById("drinkRecipient");
+const companyOrderOpenBtn = document.getElementById("companyOrderOpenBtn");
+const companyOrderModal = document.getElementById("companyOrderModal");
+const companyOrderCloseBtn = document.getElementById("companyOrderCloseBtn");
+const companyOrderForm = document.getElementById("companyOrderForm");
+const companyOrderRoomSelect = document.getElementById("companyOrderRoomSelect");
+const companyOrderCompanyInput = document.getElementById("companyOrderCompanyInput");
+const companyOrderItems = document.getElementById("companyOrderItems");
 const supportForm = document.getElementById("supportForm");
 const supportResult = document.getElementById("supportResult");
 const issueSelect = document.getElementById("issueSelect");
@@ -19,10 +26,7 @@ const quizQuestion = document.getElementById("quizQuestion");
 const quizScoreBadge = document.getElementById("quizScoreBadge");
 const quizMark = document.getElementById("quizMark");
 const quizResult = document.getElementById("quizResult");
-const feedbackForm = document.getElementById("feedbackForm");
-const feedbackScore = document.getElementById("feedbackScore");
-const feedbackText = document.getElementById("feedbackText");
-const feedbackResult = document.getElementById("feedbackResult");
+const brochureLinks = Array.from(document.querySelectorAll("[data-brochure-title]"));
 const newsDate = document.getElementById("newsDate");
 const newsCards = Array.from(document.querySelectorAll("[data-news-card]"));
 const newsOverlay = document.getElementById("newsOverlay");
@@ -48,6 +52,7 @@ let fitRafId = 0;
 let lastViewportScale = 1;
 let lastViewportOffset = 0;
 let orderPopupTimeoutId = 0;
+let activePanelName = "news";
 const newsImageClasses = ["news-image-1", "news-image-2", "news-image-3", "news-image-4"];
 const LEGAL_QUIZ_QUESTIONS = [
   {
@@ -236,10 +241,11 @@ function fitAppToViewport() {
   const viewportWidth = window.visualViewport?.width || window.innerWidth;
   if (!viewportHeight) return;
 
-  const useCompactLayout = viewportWidth < 430 || viewportHeight < 900;
+  const forceScrollableLayout = activePanelName === "drinks";
+  const useCompactLayout = forceScrollableLayout || viewportWidth < 430 || viewportHeight < 900;
   appRoot.classList.toggle("compact-layout", useCompactLayout);
   if (useCompactLayout) {
-    appRoot.style.transform = "scale(1)";
+    appRoot.style.transform = "none";
     appRoot.style.marginTop = "0px";
     lastViewportScale = 1;
     lastViewportOffset = 0;
@@ -276,6 +282,8 @@ function fitAppToViewport() {
 }
 
 function setActivePanel(panelName) {
+  activePanelName = panelName;
+  appRoot?.classList.toggle("drinks-mode", panelName === "drinks");
   menuButtons.forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.target === panelName);
   });
@@ -322,8 +330,9 @@ function showTimedPopup(title, message, minDurationMs = 3000, maxDurationMs = 40
   }, popupDuration);
 }
 
-function showOrderPopup(drink, room, recipient, waitMin, waitMax) {
-  const message = `${drink} для ${recipient}, переговорка ${room}. Время ожидания: ${waitMin}-${waitMax} мин.`;
+function showOrderPopup(drink, room, recipient, waitMin, waitMax, quantity = 1) {
+  const count = Math.max(1, Number(quantity) || 1);
+  const message = `${drink} x${count} для ${recipient}, переговорка ${room}. Время ожидания: ${waitMin}-${waitMax} мин.`;
   showTimedPopup("Заказ принят", message);
 }
 
@@ -406,6 +415,23 @@ function initNavigation() {
 }
 
 function initOrders() {
+  const drinkSteppers = Array.from(document.querySelectorAll(".drink-stepper"));
+  drinkSteppers.forEach((stepper) => {
+    const valueNode = stepper.querySelector(".drink-qty-value");
+    if (!valueNode) return;
+    const setValue = (nextValue) => {
+      const clamped = Math.max(1, Math.min(9, nextValue));
+      valueNode.textContent = String(clamped);
+    };
+    stepper.querySelectorAll(".qty-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        const delta = Number.parseInt(button.dataset.step || "0", 10) || 0;
+        const current = Number.parseInt(valueNode.textContent || "1", 10) || 1;
+        setValue(current + delta);
+      });
+    });
+  });
+
   drinkRoomSelect?.addEventListener("change", () => {
     setRoom(drinkRoomSelect.value);
   });
@@ -414,20 +440,189 @@ function initOrders() {
   orderButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const drink = button.dataset.drink || "Напиток";
+      const card = button.closest(".drink-card");
+      const quantityValue = card?.querySelector(".drink-qty-value")?.textContent || "1";
+      const quantity = Math.max(1, Number.parseInt(quantityValue, 10) || 1);
       const currentRoom = drinkRoomSelect?.value || roomSelect?.value || state.selectedRoom;
       const recipient = drinkRecipientInput?.value.trim() || "гостя";
       const waitMin = 5 + Math.floor(Math.random() * 3);
       const waitMax = waitMin + 2;
 
-      showOrderPopup(drink, currentRoom, recipient, waitMin, waitMax);
+      showOrderPopup(drink, currentRoom, recipient, waitMin, waitMax, quantity);
       storeLog("drink_order", {
         drink,
+        quantity,
         room: currentRoom,
         recipient,
         waitMin,
         waitMax,
       });
     });
+  });
+}
+
+function initCompanyOrderModal() {
+  if (
+    !companyOrderOpenBtn ||
+    !companyOrderModal ||
+    !companyOrderCloseBtn ||
+    !companyOrderForm ||
+    !companyOrderRoomSelect ||
+    !companyOrderCompanyInput ||
+    !companyOrderItems
+  ) {
+    return;
+  }
+
+  const drinkNameNodes = Array.from(document.querySelectorAll("#panel-drinks .drink-card h3"));
+  const drinkNames = drinkNameNodes
+    .map((node) => node.textContent?.trim() || "")
+    .filter(Boolean);
+
+  const uniqueDrinkNames = Array.from(new Set(drinkNames));
+
+  const clampQty = (rawValue) => {
+    const parsed = Number.parseInt(String(rawValue || "0"), 10);
+    if (!Number.isFinite(parsed)) return 0;
+    return Math.max(0, Math.min(99, parsed));
+  };
+
+  const syncRoomOptions = () => {
+    companyOrderRoomSelect.innerHTML = "";
+    if (drinkRoomSelect?.options.length) {
+      Array.from(drinkRoomSelect.options).forEach((option) => {
+        const copiedOption = document.createElement("option");
+        copiedOption.value = option.value;
+        copiedOption.textContent = option.textContent || option.value;
+        companyOrderRoomSelect.append(copiedOption);
+      });
+      companyOrderRoomSelect.value = drinkRoomSelect.value;
+      return;
+    }
+
+    rooms.forEach((room) => {
+      const option = document.createElement("option");
+      option.value = room;
+      option.textContent = room;
+      companyOrderRoomSelect.append(option);
+    });
+    companyOrderRoomSelect.value = state.selectedRoom;
+  };
+
+  const renderOrderRows = () => {
+    companyOrderItems.innerHTML = "";
+    uniqueDrinkNames.forEach((name, index) => {
+      const row = document.createElement("div");
+      row.className = "company-order-row";
+
+      const title = document.createElement("span");
+      title.className = "company-order-name";
+      title.textContent = name;
+
+      const qtyInput = document.createElement("input");
+      qtyInput.className = "company-order-qty-input";
+      qtyInput.type = "number";
+      qtyInput.inputMode = "numeric";
+      qtyInput.min = "0";
+      qtyInput.max = "99";
+      qtyInput.step = "1";
+      qtyInput.value = "0";
+      qtyInput.setAttribute("aria-label", `Количество: ${name}`);
+      qtyInput.dataset.drinkName = name;
+      qtyInput.addEventListener("change", () => {
+        qtyInput.value = String(clampQty(qtyInput.value));
+      });
+      qtyInput.addEventListener("blur", () => {
+        qtyInput.value = String(clampQty(qtyInput.value));
+      });
+
+      row.append(title, qtyInput);
+      companyOrderItems.append(row);
+
+      if (index === 0) {
+        qtyInput.setAttribute("data-first-company-order-input", "true");
+      }
+    });
+  };
+
+  const openCompanyOrderModal = () => {
+    syncRoomOptions();
+    renderOrderRows();
+    companyOrderCompanyInput.value = "";
+    companyOrderModal.classList.add("open");
+    companyOrderModal.setAttribute("aria-hidden", "false");
+  };
+
+  const closeCompanyOrderModal = () => {
+    companyOrderModal.classList.remove("open");
+    companyOrderModal.setAttribute("aria-hidden", "true");
+  };
+
+  companyOrderOpenBtn.addEventListener("click", openCompanyOrderModal);
+  companyOrderCloseBtn.addEventListener("click", closeCompanyOrderModal);
+
+  companyOrderModal.addEventListener("click", (event) => {
+    if (event.target === companyOrderModal) {
+      closeCompanyOrderModal();
+    }
+  });
+
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && companyOrderModal.classList.contains("open")) {
+      closeCompanyOrderModal();
+    }
+  });
+
+  companyOrderForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const orderInputs = Array.from(companyOrderItems.querySelectorAll(".company-order-qty-input"));
+    const items = orderInputs
+      .map((input) => ({
+        drink: input.dataset.drinkName || "Напиток",
+        quantity: clampQty(input.value),
+      }))
+      .filter((item) => item.quantity > 0);
+
+    if (!items.length) {
+      showTimedPopup(
+        "Добавьте напитки",
+        "Укажите количество хотя бы для одного напитка.",
+        1800,
+        2200,
+      );
+      return;
+    }
+
+    const currentRoom = companyOrderRoomSelect.value || drinkRoomSelect?.value || state.selectedRoom;
+    const companyName = companyOrderCompanyInput.value.trim() || "Компания не указана";
+    setRoom(currentRoom);
+
+    const waitMin = 7 + Math.floor(Math.random() * 3);
+    const waitMax = waitMin + 3;
+    const portionsTotal = items.reduce((total, item) => total + item.quantity, 0);
+    const shortSummary = items
+      .slice(0, 3)
+      .map((item) => `${item.drink} x${item.quantity}`)
+      .join(", ");
+    const remainingCount = Math.max(0, items.length - 3);
+    const summarySuffix = remainingCount ? ` и еще ${remainingCount}` : "";
+
+    showTimedPopup(
+      "Заказ на компанию принят",
+      `${companyName}. Переговорка ${currentRoom}. ${shortSummary}${summarySuffix}. Порций: ${portionsTotal}. Ожидание: ${waitMin}-${waitMax} мин.`,
+    );
+
+    storeLog("company_drink_order", {
+      companyName,
+      room: currentRoom,
+      items,
+      portionsTotal,
+      waitMin,
+      waitMax,
+    });
+
+    closeCompanyOrderModal();
   });
 }
 
@@ -596,26 +791,17 @@ function initQuiz() {
   restartQuiz();
 }
 
-function initFeedback() {
-  if (!feedbackForm) return;
-
-  feedbackForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const score = feedbackScore?.value || "";
-    const comment = feedbackText?.value.trim() || "";
-
-    if (feedbackResult) {
-      feedbackResult.textContent = "Спасибо! Ваш отзыв отправлен.";
-    }
-    showToast("Спасибо за отзыв о Пепеляев");
-
-    storeLog("pepeliaev_feedback", {
-      score,
-      comment,
+function initBrochures() {
+  if (!brochureLinks.length) return;
+  brochureLinks.forEach((link) => {
+    link.addEventListener("click", () => {
+      const title = link.dataset.brochureTitle || "Брошюра";
+      showToast("Открываем брошюру");
+      storeLog("brochure_open", {
+        title,
+        url: link.href,
+      });
     });
-
-    feedbackForm.reset();
-    queueFitToViewport();
   });
 }
 
@@ -688,12 +874,23 @@ function initDinoGame() {
   ctx.imageSmoothingEnabled = true;
   const professorSprite = new Image();
   let professorSpriteReady = false;
+  const speedMultiplier = 2.55;
+  const victoryScore = 5000;
+  const victoryText = "Поздравляем, вы убежали от ответственности!";
+  const scoreMilestones = [
+    { score: 100, text: "От кого вы бежите?" },
+    { score: 200, text: "Ого, разогнался!" },
+    { score: 300, text: "Шины будем менять?" },
+    { score: 500, text: "Хе-хе, скоро пенсия!" },
+    { score: 1000, text: "А вы правда что-то можете" },
+    { score: 2000, text: "Может, хватит?" },
+  ];
   const game = {
     running: false,
     status: "idle",
     score: 0,
     best: Number(localStorage.getItem("dino_best") || 0),
-    speed: 2.1,
+    speed: 2.1 * speedMultiplier,
     gravity: 0.42,
     jumpPower: -13.05,
     groundY: dinoCanvas.height - 20,
@@ -709,16 +906,156 @@ function initDinoGame() {
       vy: 0,
     },
   };
-  const baseSpeed = 2.1;
-  const maxSpeedGain = 1.1;
+  const baseSpeed = 2.1 * speedMultiplier;
+  const maxSpeedGain = 1.1 * speedMultiplier;
   const fixedStepMs = 1000 / 60;
   const maxDeltaMs = 250;
   const maxSimulationMsPerFrame = 500;
   let lastFrameAt = 0;
   let accumulatorMs = 0;
+  let milestoneIndex = 0;
+  let bannerTimeoutId = 0;
+  let activeBannerText = "";
   const bgGradient = ctx.createLinearGradient(0, 0, 0, dinoCanvas.height);
   bgGradient.addColorStop(0, "#fbfcff");
   bgGradient.addColorStop(1, "#edf0ff");
+  const scalesSprite = createScalesSprite();
+
+  function createScalesSprite() {
+    const sprite = document.createElement("canvas");
+    sprite.width = 172;
+    sprite.height = 132;
+    const sctx = sprite.getContext("2d");
+    if (!sctx) return null;
+
+    sctx.imageSmoothingEnabled = true;
+    sctx.imageSmoothingQuality = "high";
+    sctx.lineJoin = "round";
+    sctx.lineCap = "round";
+    const outline = "#1f1d25";
+    const orange = "#ff9966";
+    const bowl = "#f3b44f";
+    const baseMain = "#9d93a3";
+    const baseDark = "#7e7485";
+
+    function roundRectPath(x, y, w, h, r) {
+      const radius = Math.max(0, Math.min(r, w / 2, h / 2));
+      sctx.beginPath();
+      sctx.moveTo(x + radius, y);
+      sctx.lineTo(x + w - radius, y);
+      sctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+      sctx.lineTo(x + w, y + h - radius);
+      sctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+      sctx.lineTo(x + radius, y + h);
+      sctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+      sctx.lineTo(x, y + radius);
+      sctx.quadraticCurveTo(x, y, x + radius, y);
+      sctx.closePath();
+    }
+
+    sctx.fillStyle = "rgba(31,29,37,0.18)";
+    sctx.beginPath();
+    sctx.ellipse(86, 124, 56, 5.5, 0, 0, Math.PI * 2);
+    sctx.fill();
+
+    sctx.fillStyle = baseMain;
+    sctx.strokeStyle = outline;
+    sctx.lineWidth = 6;
+    roundRectPath(45, 108, 82, 18, 5);
+    sctx.fill();
+    sctx.stroke();
+
+    sctx.fillStyle = baseDark;
+    roundRectPath(49, 112, 74, 10, 3);
+    sctx.fill();
+
+    sctx.fillStyle = baseMain;
+    sctx.beginPath();
+    sctx.arc(86, 104, 24, Math.PI, 0, false);
+    sctx.closePath();
+    sctx.fill();
+    sctx.stroke();
+
+    sctx.fillStyle = orange;
+    sctx.strokeStyle = outline;
+    sctx.lineWidth = 6;
+    roundRectPath(79, 33, 14, 72, 4);
+    sctx.fill();
+    sctx.stroke();
+
+    sctx.save();
+    sctx.translate(86, 34);
+    sctx.rotate(-0.25);
+    sctx.fillStyle = orange;
+    sctx.strokeStyle = outline;
+    sctx.lineWidth = 6;
+    roundRectPath(-64, -5, 128, 10, 5);
+    sctx.fill();
+    sctx.stroke();
+    sctx.restore();
+
+    sctx.fillStyle = orange;
+    sctx.beginPath();
+    sctx.arc(86, 34, 8, 0, Math.PI * 2);
+    sctx.fill();
+    sctx.stroke();
+
+    const leftAnchor = { x: 26, y: 50 };
+    const rightAnchor = { x: 145, y: 18 };
+    const leftBowlY = 82;
+    const rightBowlY = 73;
+    const bowlRadius = 20;
+
+    sctx.strokeStyle = outline;
+    sctx.lineWidth = 3;
+    sctx.beginPath();
+    sctx.moveTo(leftAnchor.x, leftAnchor.y);
+    sctx.lineTo(13, leftBowlY);
+    sctx.moveTo(leftAnchor.x, leftAnchor.y);
+    sctx.lineTo(39, leftBowlY);
+    sctx.moveTo(rightAnchor.x, rightAnchor.y);
+    sctx.lineTo(132, rightBowlY);
+    sctx.moveTo(rightAnchor.x, rightAnchor.y);
+    sctx.lineTo(158, rightBowlY);
+    sctx.stroke();
+
+    function drawBowl(cx, cy) {
+      sctx.fillStyle = bowl;
+      sctx.strokeStyle = outline;
+      sctx.lineWidth = 5;
+      sctx.beginPath();
+      sctx.moveTo(cx - bowlRadius, cy);
+      sctx.lineTo(cx + bowlRadius, cy);
+      sctx.arc(cx, cy, bowlRadius, 0, Math.PI, false);
+      sctx.closePath();
+      sctx.fill();
+      sctx.stroke();
+    }
+
+    drawBowl(26, leftBowlY);
+    drawBowl(145, rightBowlY);
+
+    return sprite;
+  }
+
+  function setBanner(text, autoClearMs = 0) {
+    if (bannerTimeoutId) {
+      clearTimeout(bannerTimeoutId);
+      bannerTimeoutId = 0;
+    }
+    activeBannerText = text;
+    if (text && autoClearMs > 0) {
+      bannerTimeoutId = window.setTimeout(() => {
+        bannerTimeoutId = 0;
+        if (activeBannerText === text) {
+          activeBannerText = "";
+          if (!game.running) {
+            render();
+          }
+        }
+      }, autoClearMs);
+    }
+  }
 
   function updateStats() {
     if (scoreValue) {
@@ -753,6 +1090,8 @@ function initDinoGame() {
     game.dino.vy = 0;
     lastFrameAt = 0;
     accumulatorMs = 0;
+    milestoneIndex = 0;
+    setBanner("");
     if (gameMeta) {
       gameMeta.textContent = "Игра запущена. Нажимайте на экран для прыжка.";
     }
@@ -760,13 +1099,32 @@ function initDinoGame() {
   }
 
   function spawnObstacle() {
-    const width = 10 + Math.random() * 12;
-    const height = 14 + Math.random() * 20;
+    const baseScale = 0.8 + Math.random() * 0.2;
+    const variantRoll = Math.random();
+    let sizeBoost = 1;
+    let veryLargeVariant = false;
+    if (variantRoll < 0.1) {
+      veryLargeVariant = true;
+      sizeBoost = 1.38 + Math.random() * 0.2;
+    } else if (variantRoll < 0.34) {
+      sizeBoost = 1.18 + Math.random() * 0.16;
+    }
+    const scale = baseScale * sizeBoost;
+    const width = (48 + Math.random() * 10) * scale;
+    const height = (40 + Math.random() * 7) * scale;
+    const hitboxOffsetX = veryLargeVariant ? width * 0.22 : width * 0.2;
+    const hitboxOffsetY = veryLargeVariant ? height * 0.66 : height * 0.62;
+    const hitboxW = veryLargeVariant ? width * 0.56 : width * 0.6;
+    const hitboxH = veryLargeVariant ? height * 0.2 : height * 0.24;
     game.obstacles.push({
       x: dinoCanvas.width + 4,
       y: game.groundY - height,
       w: width,
       h: height,
+      hitboxOffsetX,
+      hitboxOffsetY,
+      hitboxW,
+      hitboxH,
     });
     game.spawnInterval = 118 + Math.floor(Math.random() * 86);
     game.spawnTimer = 0;
@@ -781,9 +1139,9 @@ function initDinoGame() {
     );
   }
 
-  function endGame() {
+  function endGame(reason = "crash") {
     game.running = false;
-    game.status = "gameover";
+    game.status = reason === "victory" ? "victory" : "gameover";
     cancelAnimationFrame(game.rafId);
     lastFrameAt = 0;
     accumulatorMs = 0;
@@ -792,11 +1150,24 @@ function initDinoGame() {
       game.best = scoreRounded;
       localStorage.setItem("dino_best", String(game.best));
     }
-    if (gameMeta) {
+    if (reason === "victory") {
+      if (gameMeta) {
+        gameMeta.textContent = `${victoryText} Счет: ${scoreRounded}.`;
+      }
+    } else if (gameMeta) {
       gameMeta.textContent = `Игра окончена. Счет: ${scoreRounded}. Рекорд: ${game.best}.`;
     }
     updateStats();
     render();
+  }
+
+  function applyMilestoneMessages() {
+    if (milestoneIndex >= scoreMilestones.length) return;
+    const roundedScore = Math.floor(game.score);
+    while (milestoneIndex < scoreMilestones.length && roundedScore >= scoreMilestones[milestoneIndex].score) {
+      setBanner(scoreMilestones[milestoneIndex].text, 5000);
+      milestoneIndex += 1;
+    }
   }
 
   function update() {
@@ -821,7 +1192,13 @@ function initDinoGame() {
 
     for (const obstacle of game.obstacles) {
       obstacle.x -= game.speed;
-      if (collides(body, obstacle)) {
+      const hitbox = {
+        x: obstacle.x + obstacle.hitboxOffsetX,
+        y: obstacle.y + obstacle.hitboxOffsetY,
+        w: obstacle.hitboxW,
+        h: obstacle.hitboxH,
+      };
+      if (collides(body, hitbox)) {
         endGame();
         return;
       }
@@ -830,6 +1207,44 @@ function initDinoGame() {
 
     game.score += 0.05;
     game.speed = baseSpeed + Math.min(maxSpeedGain, game.score / 420);
+    applyMilestoneMessages();
+    if (game.score >= victoryScore) {
+      endGame("victory");
+    }
+  }
+
+  function wrapCanvasText(text, maxWidth) {
+    const words = text.split(" ");
+    const lines = [];
+    let line = "";
+    for (const word of words) {
+      const testLine = line ? `${line} ${word}` : word;
+      if (ctx.measureText(testLine).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line) {
+      lines.push(line);
+    }
+    return lines.length ? lines : [text];
+  }
+
+  function traceRoundedRect(pathCtx, x, y, w, h, radius) {
+    const r = Math.max(0, Math.min(radius, w / 2, h / 2));
+    pathCtx.beginPath();
+    pathCtx.moveTo(x + r, y);
+    pathCtx.lineTo(x + w - r, y);
+    pathCtx.quadraticCurveTo(x + w, y, x + w, y + r);
+    pathCtx.lineTo(x + w, y + h - r);
+    pathCtx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    pathCtx.lineTo(x + r, y + h);
+    pathCtx.quadraticCurveTo(x, y + h, x, y + h - r);
+    pathCtx.lineTo(x, y + r);
+    pathCtx.quadraticCurveTo(x, y, x + r, y);
+    pathCtx.closePath();
   }
 
   function render() {
@@ -859,21 +1274,75 @@ function initDinoGame() {
       ctx.fillRect(game.dino.x + 20, game.dino.y + 10, 5, 5);
     }
 
-    ctx.fillStyle = "#b54ca2";
     game.obstacles.forEach((obstacle) => {
-      ctx.fillRect(obstacle.x, obstacle.y, obstacle.w, obstacle.h);
+      if (scalesSprite) {
+        ctx.save();
+        traceRoundedRect(ctx, obstacle.x, obstacle.y, obstacle.w, obstacle.h, Math.min(6, obstacle.w * 0.18));
+        ctx.clip();
+        ctx.drawImage(
+          scalesSprite,
+          obstacle.x,
+          obstacle.y,
+          obstacle.w,
+          obstacle.h,
+        );
+        ctx.restore();
+      } else {
+        ctx.fillStyle = "#272c3e";
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.w, obstacle.h);
+      }
     });
+
+    if (game.running && activeBannerText) {
+      ctx.save();
+      ctx.font = '700 24px "Montserrat"';
+      const maxWidth = dinoCanvas.width - 28;
+      const lines = wrapCanvasText(activeBannerText, maxWidth);
+      const lineHeight = 24;
+      const verticalPad = 8;
+      const boxY = 22;
+      const boxHeight = lines.length * lineHeight + verticalPad * 2;
+
+      ctx.fillStyle = "rgba(255,255,255,0.86)";
+      ctx.fillRect(8, boxY, dinoCanvas.width - 16, boxHeight);
+      ctx.strokeStyle = "rgba(149,27,129,0.36)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(8, boxY, dinoCanvas.width - 16, boxHeight);
+
+      ctx.fillStyle = "#951b81";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const startY = boxY + verticalPad + lineHeight / 2;
+      lines.forEach((textLine, index) => {
+        ctx.fillText(textLine, dinoCanvas.width / 2, startY + index * lineHeight);
+      });
+      ctx.restore();
+    }
 
     if (!game.running) {
       ctx.fillStyle = "rgba(255,255,255,0.68)";
       ctx.fillRect(0, 0, dinoCanvas.width, dinoCanvas.height);
       ctx.fillStyle = "#272c3e";
-      ctx.font = '700 20px "Montserrat"';
+      ctx.font = game.status === "victory" ? '700 15px "Montserrat"' : '700 20px "Montserrat"';
       ctx.textAlign = "center";
       const title =
-        game.status === "gameover" ? "Игра закончилась" : "Нажмите для старта";
-      ctx.fillText(title, dinoCanvas.width / 2, dinoCanvas.height / 2 - 3);
-      if (game.status === "gameover") {
+        game.status === "victory"
+          ? victoryText
+          : game.status === "gameover"
+            ? "Игра закончилась"
+            : "Нажмите для старта";
+      if (game.status === "victory") {
+        const maxWidth = dinoCanvas.width - 26;
+        const lines = wrapCanvasText(title, maxWidth);
+        const lineHeight = 18;
+        const startY = dinoCanvas.height / 2 - ((lines.length - 1) * lineHeight) / 2 - 8;
+        lines.forEach((textLine, index) => {
+          ctx.fillText(textLine, dinoCanvas.width / 2, startY + index * lineHeight);
+        });
+      } else {
+        ctx.fillText(title, dinoCanvas.width / 2, dinoCanvas.height / 2 - 3);
+      }
+      if (game.status === "gameover" || game.status === "victory") {
         ctx.font = '700 12px "Montserrat"';
         ctx.fillText(
           "Нажмите для новой попытки",
@@ -964,9 +1433,10 @@ function init() {
   initNewsPrototype();
   initOrderPopup();
   initOrders();
+  initCompanyOrderModal();
   initSupportForm();
   initQuiz();
-  initFeedback();
+  initBrochures();
   initDinoGame();
   queueFitToViewport();
 
