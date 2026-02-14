@@ -11,6 +11,12 @@ const panels = Array.from(document.querySelectorAll(".panel"));
 const roomSelect = document.getElementById("roomSelect");
 const drinkRoomSelect = document.getElementById("drinkRoomSelect");
 const drinkRecipientInput = document.getElementById("drinkRecipient");
+const drinkSelect = document.getElementById("drinkSelect");
+const drinkSelectionCard = document.getElementById("drinkSelectionCard");
+const drinkSelectionName = document.getElementById("drinkSelectionName");
+const singleDrinkStepper = document.getElementById("singleDrinkStepper");
+const singleDrinkQtyValue = document.getElementById("singleDrinkQtyValue");
+const singleDrinkOrderBtn = document.getElementById("singleDrinkOrderBtn");
 const companyOrderOpenBtn = document.getElementById("companyOrderOpenBtn");
 const companyOrderModal = document.getElementById("companyOrderModal");
 const companyOrderCloseBtn = document.getElementById("companyOrderCloseBtn");
@@ -220,9 +226,6 @@ function setRoom(roomName) {
   if (roomSelect) {
     roomSelect.value = roomName;
   }
-  if (drinkRoomSelect) {
-    drinkRoomSelect.value = roomName;
-  }
 }
 
 function queueFitToViewport() {
@@ -241,10 +244,13 @@ function fitAppToViewport() {
   const viewportWidth = window.visualViewport?.width || window.innerWidth;
   if (!viewportHeight) return;
 
-  const forceScrollableLayout = activePanelName === "drinks";
-  const useCompactLayout = forceScrollableLayout || viewportWidth < 430 || viewportHeight < 900;
+  const unlockDinoLayout = activePanelName === "dino" && viewportHeight > 844;
+  appRoot.classList.toggle("dino-unlocked", unlockDinoLayout);
+
+  const forceNoScaleLayout = activePanelName === "drinks" || unlockDinoLayout;
+  const useCompactLayout = activePanelName === "drinks" || viewportWidth <= 430 || viewportHeight < 900;
   appRoot.classList.toggle("compact-layout", useCompactLayout);
-  if (useCompactLayout) {
+  if (forceNoScaleLayout || useCompactLayout) {
     appRoot.style.transform = "none";
     appRoot.style.marginTop = "0px";
     lastViewportScale = 1;
@@ -330,9 +336,64 @@ function showTimedPopup(title, message, minDurationMs = 3000, maxDurationMs = 40
   }, popupDuration);
 }
 
+function toDativeWord(rawWord, preferredGender = "") {
+  const word = String(rawWord || "").trim();
+  if (!word) return word;
+  const lower = word.toLowerCase();
+
+  const keepAsIs = ["оглы", "кызы"];
+  if (keepAsIs.some((ending) => lower.endsWith(ending))) {
+    return word;
+  }
+
+  const applySameCase = (next) => {
+    if (word === word.toUpperCase()) return next.toUpperCase();
+    if (word[0] === word[0].toUpperCase()) {
+      return next.charAt(0).toUpperCase() + next.slice(1);
+    }
+    return next;
+  };
+
+  const replaceLast = (count, nextTail) => applySameCase(lower.slice(0, -count) + nextTail);
+
+  if (lower.endsWith("вич") || lower.endsWith("ич")) return applySameCase(`${lower}у`);
+  if (lower.endsWith("вна") || lower.endsWith("ична")) return replaceLast(1, "е");
+  if (lower.endsWith("ия")) return replaceLast(2, "ии");
+  if (lower.endsWith("ья")) return replaceLast(2, "ье");
+  if (lower.endsWith("я")) return replaceLast(1, "е");
+  if (lower.endsWith("а")) return replaceLast(1, "е");
+  if (lower.endsWith("й")) return replaceLast(1, "ю");
+  if (lower.endsWith("ь")) return replaceLast(1, preferredGender === "female" ? "и" : "ю");
+
+  if (/[бвгджзклмнпрстфхцчшщ]$/i.test(lower)) return applySameCase(`${lower}у`);
+  return word;
+}
+
+function toRecipientDative(recipientRaw) {
+  const raw = String(recipientRaw || "").trim();
+  if (!raw) return "гостю";
+
+  const parts = raw.split(/\s+/);
+  let detectedGender = "";
+  if (parts.length >= 2) {
+    const second = parts[1].toLowerCase();
+    if (second.endsWith("вич") || second.endsWith("РёС‡")) detectedGender = "male";
+    if (second.endsWith("вна") || second.endsWith("ична")) detectedGender = "female";
+  }
+
+  return parts
+    .map((part) => {
+      const chunks = part.split("-");
+      const converted = chunks.map((chunk) => toDativeWord(chunk, detectedGender)).join("-");
+      return converted;
+    })
+    .join(" ");
+}
+
 function showOrderPopup(drink, room, recipient, waitMin, waitMax, quantity = 1) {
   const count = Math.max(1, Number(quantity) || 1);
-  const message = `${drink} x${count} для ${recipient}, переговорка ${room}. Время ожидания: ${waitMin}-${waitMax} мин.`;
+  const recipientDative = toRecipientDative(recipient);
+  const message = `${drink} x${count} для ${recipientDative}, переговорка ${room}. Время ожидания: ${waitMin}-${waitMax} мин.`;
   showTimedPopup("Заказ принят", message);
 }
 
@@ -415,48 +476,83 @@ function initNavigation() {
 }
 
 function initOrders() {
-  const drinkSteppers = Array.from(document.querySelectorAll(".drink-stepper"));
-  drinkSteppers.forEach((stepper) => {
-    const valueNode = stepper.querySelector(".drink-qty-value");
-    if (!valueNode) return;
-    const setValue = (nextValue) => {
-      const clamped = Math.max(1, Math.min(9, nextValue));
-      valueNode.textContent = String(clamped);
-    };
-    stepper.querySelectorAll(".qty-btn").forEach((button) => {
-      button.addEventListener("click", () => {
-        const delta = Number.parseInt(button.dataset.step || "0", 10) || 0;
-        const current = Number.parseInt(valueNode.textContent || "1", 10) || 1;
-        setValue(current + delta);
-      });
+  if (
+    !drinkRoomSelect ||
+    !drinkRecipientInput ||
+    !drinkSelect ||
+    !drinkSelectionCard ||
+    !drinkSelectionName ||
+    !singleDrinkStepper ||
+    !singleDrinkQtyValue ||
+    !singleDrinkOrderBtn
+  ) {
+    return;
+  }
+
+  const setQuantity = (nextValue) => {
+    const clamped = Math.max(1, Math.min(9, nextValue));
+    singleDrinkQtyValue.textContent = String(clamped);
+  };
+
+  const updateSelectionUi = () => {
+    const selectedDrink = (drinkSelect.value || "").trim();
+    const hasSelectedDrink = Boolean(selectedDrink);
+    drinkSelectionCard.classList.toggle("is-hidden", !hasSelectedDrink);
+    drinkSelectionName.textContent = hasSelectedDrink ? selectedDrink : "";
+    singleDrinkOrderBtn.disabled = !hasSelectedDrink;
+  };
+
+  setQuantity(1);
+  updateSelectionUi();
+
+  drinkSelect.addEventListener("change", () => {
+    setQuantity(1);
+    updateSelectionUi();
+  });
+
+  drinkRoomSelect.addEventListener("change", () => {
+    const selectedRoom = (drinkRoomSelect.value || "").trim();
+    if (selectedRoom) {
+      setRoom(selectedRoom);
+    }
+  });
+
+  singleDrinkStepper.querySelectorAll(".qty-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const delta = Number.parseInt(button.dataset.step || "0", 10) || 0;
+      const current = Number.parseInt(singleDrinkQtyValue.textContent || "1", 10) || 1;
+      setQuantity(current + delta);
     });
   });
 
-  drinkRoomSelect?.addEventListener("change", () => {
-    setRoom(drinkRoomSelect.value);
-  });
+  singleDrinkOrderBtn.addEventListener("click", () => {
+    const selectedDrink = (drinkSelect.value || "").trim();
+    const currentRoom = (drinkRoomSelect.value || "").trim();
+    const recipient = drinkRecipientInput.value.trim();
+    const quantity = Math.max(1, Number.parseInt(singleDrinkQtyValue.textContent || "1", 10) || 1);
 
-  const orderButtons = Array.from(document.querySelectorAll(".order-btn"));
-  orderButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const drink = button.dataset.drink || "Напиток";
-      const card = button.closest(".drink-card");
-      const quantityValue = card?.querySelector(".drink-qty-value")?.textContent || "1";
-      const quantity = Math.max(1, Number.parseInt(quantityValue, 10) || 1);
-      const currentRoom = drinkRoomSelect?.value || roomSelect?.value || state.selectedRoom;
-      const recipient = drinkRecipientInput?.value.trim() || "гостя";
-      const waitMin = 5 + Math.floor(Math.random() * 3);
-      const waitMax = waitMin + 2;
+    if (!currentRoom) {
+      showTimedPopup("Выберите переговорку", "Укажите переговорку для заказа.", 1800, 2200);
+      return;
+    }
 
-      showOrderPopup(drink, currentRoom, recipient, waitMin, waitMax, quantity);
-      storeLog("drink_order", {
-        drink,
-        quantity,
-        room: currentRoom,
-        recipient,
-        waitMin,
-        waitMax,
-      });
+    if (!selectedDrink) {
+      showTimedPopup("Выберите напиток", "Сначала выберите позицию в списке напитков.", 1800, 2200);
+      return;
+    }
+
+    setRoom(currentRoom);
+    const waitMin = 5 + Math.floor(Math.random() * 3);
+    const waitMax = waitMin + 2;
+
+    showOrderPopup(selectedDrink, currentRoom, recipient, waitMin, waitMax, quantity);
+    storeLog("drink_order", {
+      drink: selectedDrink,
+      quantity,
+      room: currentRoom,
+      recipient,
+      waitMin,
+      waitMax,
     });
   });
 }
@@ -474,9 +570,8 @@ function initCompanyOrderModal() {
     return;
   }
 
-  const drinkNameNodes = Array.from(document.querySelectorAll("#panel-drinks .drink-card h3"));
-  const drinkNames = drinkNameNodes
-    .map((node) => node.textContent?.trim() || "")
+  const drinkNames = Array.from(drinkSelect?.options || [])
+    .map((option) => option.value?.trim() || "")
     .filter(Boolean);
 
   const uniqueDrinkNames = Array.from(new Set(drinkNames));
@@ -529,6 +624,21 @@ function initCompanyOrderModal() {
       qtyInput.value = "0";
       qtyInput.setAttribute("aria-label", `Количество: ${name}`);
       qtyInput.dataset.drinkName = name;
+      qtyInput.addEventListener("focus", () => {
+        if ((qtyInput.value || "").trim() === "0") {
+          qtyInput.value = "";
+        }
+      });
+      qtyInput.addEventListener("input", () => {
+        const raw = String(qtyInput.value || "");
+        const digitsOnly = raw.replace(/\D+/g, "");
+        if (!digitsOnly) {
+          qtyInput.value = "";
+          return;
+        }
+        const normalized = Math.min(99, Number.parseInt(digitsOnly, 10) || 0);
+        qtyInput.value = String(normalized);
+      });
       qtyInput.addEventListener("change", () => {
         qtyInput.value = String(clampQty(qtyInput.value));
       });
@@ -576,6 +686,12 @@ function initCompanyOrderModal() {
   companyOrderForm.addEventListener("submit", (event) => {
     event.preventDefault();
 
+    const currentRoom = (companyOrderRoomSelect.value || "").trim();
+    if (!currentRoom) {
+      showTimedPopup("Выберите переговорку", "Укажите переговорку для заказа на компанию.", 1800, 2200);
+      return;
+    }
+
     const orderInputs = Array.from(companyOrderItems.querySelectorAll(".company-order-qty-input"));
     const items = orderInputs
       .map((input) => ({
@@ -594,7 +710,6 @@ function initCompanyOrderModal() {
       return;
     }
 
-    const currentRoom = companyOrderRoomSelect.value || drinkRoomSelect?.value || state.selectedRoom;
     const companyName = companyOrderCompanyInput.value.trim() || "Компания не указана";
     setRoom(currentRoom);
 
@@ -874,16 +989,19 @@ function initDinoGame() {
   ctx.imageSmoothingEnabled = true;
   const professorSprite = new Image();
   let professorSpriteReady = false;
+  let professorBodySprite = null;
+  let professorHatSprite = null;
   const speedMultiplier = 2.55;
   const victoryScore = 5000;
-  const victoryText = "Поздравляем, вы убежали от ответственности!";
+  const victoryText =
+    "\u041f\u043e\u0437\u0434\u0440\u0430\u0432\u043b\u044f\u0435\u043c, \u0432\u044b \u0443\u0431\u0435\u0436\u0430\u043b\u0438 \u043e\u0442 \u043e\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0435\u043d\u043d\u043e\u0441\u0442\u0438!";
   const scoreMilestones = [
-    { score: 100, text: "От кого вы бежите?" },
-    { score: 200, text: "Ого, разогнался!" },
-    { score: 300, text: "Шины будем менять?" },
-    { score: 500, text: "Хе-хе, скоро пенсия!" },
-    { score: 1000, text: "А вы правда что-то можете" },
-    { score: 2000, text: "Может, хватит?" },
+    { score: 100, text: "\u041e\u0442 \u043a\u043e\u0433\u043e \u0432\u044b \u0431\u0435\u0436\u0438\u0442\u0435?" },
+    { score: 200, text: "\u041e\u0433\u043e, \u0440\u0430\u0437\u043e\u0433\u043d\u0430\u043b\u0441\u044f!" },
+    { score: 300, text: "\u0428\u0438\u043d\u044b \u0431\u0443\u0434\u0435\u043c \u043c\u0435\u043d\u044f\u0442\u044c?" },
+    { score: 500, text: "\u0425\u0435-\u0445\u0435, \u0441\u043a\u043e\u0440\u043e \u043f\u0435\u043d\u0441\u0438\u044f!" },
+    { score: 1000, text: "\u0410 \u0432\u044b \u043f\u0440\u0430\u0432\u0434\u0430 \u0447\u0442\u043e-\u0442\u043e \u043c\u043e\u0436\u0435\u0442\u0435" },
+    { score: 2000, text: "\u041c\u043e\u0436\u0435\u0442, \u0445\u0432\u0430\u0442\u0438\u0442?" },
   ];
   const game = {
     running: false,
@@ -906,19 +1024,39 @@ function initDinoGame() {
       vy: 0,
     },
   };
+  const BASE_DINO_X = 34;
+  const BASE_DINO_W = 43;
+  const BASE_DINO_H = 58;
+  const BASE_GAME_WIDTH = 360;
+  const MIN_SPRITE_SCALE = 0.88;
+  const MAX_SPRITE_SCALE = 1;
+  const BASE_GROUND_OFFSET = 20;
+  const BASE_GRAVITY = 0.42;
+  const BASE_JUMP_POWER = -13.05;
+  const HAT_BOUNCE_DURATION_MS = 1000;
+  const HAT_BOUNCE_PX = 5;
+  const HAT_SRC_X_RATIO = 0.07;
+  const HAT_SRC_W_RATIO = 0.76;
+  const HAT_SRC_H_RATIO = 0.18;
   const baseSpeed = 2.1 * speedMultiplier;
   const maxSpeedGain = 1.1 * speedMultiplier;
   const fixedStepMs = 1000 / 60;
   const maxDeltaMs = 250;
-  const maxSimulationMsPerFrame = 500;
+  const maxSimulationMsPerFrame = 180;
+  const maxTextWrapCacheSize = 80;
   let lastFrameAt = 0;
   let accumulatorMs = 0;
   let milestoneIndex = 0;
   let bannerTimeoutId = 0;
   let activeBannerText = "";
-  const bgGradient = ctx.createLinearGradient(0, 0, 0, dinoCanvas.height);
-  bgGradient.addColorStop(0, "#fbfcff");
-  bgGradient.addColorStop(1, "#edf0ff");
+  let spriteScale = 1;
+  let professorAspect = BASE_DINO_W / BASE_DINO_H;
+  let runCycle = 0;
+  let hatBounceEndAt = 0;
+  let bgGradient = null;
+  let carpetGradient = null;
+  let carpetGradientKey = "";
+  const textWrapCache = new Map();
   const scalesSprite = createScalesSprite();
 
   function createScalesSprite() {
@@ -1057,6 +1195,116 @@ function initDinoGame() {
     }
   }
 
+  function getBgGradient() {
+    if (bgGradient) return bgGradient;
+    bgGradient = ctx.createLinearGradient(0, 0, 0, dinoCanvas.height);
+    bgGradient.addColorStop(0, "#fbfcff");
+    bgGradient.addColorStop(1, "#edf0ff");
+    return bgGradient;
+  }
+
+  function getCarpetGradient(carpetTop, carpetBottom) {
+    const key = `${carpetTop}|${carpetBottom}|${dinoCanvas.height}`;
+    if (carpetGradient && carpetGradientKey === key) {
+      return carpetGradient;
+    }
+    const gradient = ctx.createLinearGradient(0, carpetTop, 0, carpetBottom);
+    gradient.addColorStop(0, "#8b0c2a");
+    gradient.addColorStop(0.55, "#6d0820");
+    gradient.addColorStop(1, "#4f0517");
+    carpetGradient = gradient;
+    carpetGradientKey = key;
+    return gradient;
+  }
+
+  function buildProfessorLayers() {
+    const srcW = professorSprite.naturalWidth || 0;
+    const srcH = professorSprite.naturalHeight || 0;
+    if (!srcW || !srcH) {
+      professorBodySprite = null;
+      professorHatSprite = null;
+      return;
+    }
+
+    const srcHatX = Math.max(0, Math.floor(srcW * HAT_SRC_X_RATIO));
+    const srcHatY = 0;
+    const srcHatW = Math.max(1, Math.min(srcW - srcHatX, Math.floor(srcW * HAT_SRC_W_RATIO)));
+    const srcHatH = Math.max(1, Math.floor(srcH * HAT_SRC_H_RATIO));
+
+    const bodyCanvas = document.createElement("canvas");
+    bodyCanvas.width = srcW;
+    bodyCanvas.height = srcH;
+    const bodyCtx = bodyCanvas.getContext("2d");
+    if (bodyCtx) {
+      bodyCtx.imageSmoothingEnabled = true;
+      bodyCtx.imageSmoothingQuality = "high";
+      bodyCtx.drawImage(professorSprite, 0, 0, srcW, srcH);
+      bodyCtx.clearRect(srcHatX, srcHatY, srcHatW, srcHatH);
+    }
+
+    const hatCanvas = document.createElement("canvas");
+    hatCanvas.width = srcW;
+    hatCanvas.height = srcH;
+    const hatCtx = hatCanvas.getContext("2d");
+    if (hatCtx) {
+      hatCtx.imageSmoothingEnabled = true;
+      hatCtx.imageSmoothingQuality = "high";
+      hatCtx.drawImage(
+        professorSprite,
+        srcHatX,
+        srcHatY,
+        srcHatW,
+        srcHatH,
+        srcHatX,
+        srcHatY,
+        srcHatW,
+        srcHatH,
+      );
+    }
+
+    professorBodySprite = bodyCanvas;
+    professorHatSprite = hatCanvas;
+  }
+
+  function recalculateGameMetrics() {
+    const wasOnGround = onGround();
+    const widthScale = dinoCanvas.width / BASE_GAME_WIDTH;
+    spriteScale = Math.max(MIN_SPRITE_SCALE, Math.min(MAX_SPRITE_SCALE, widthScale));
+
+    game.dino.x = BASE_DINO_X * spriteScale;
+    game.dino.h = BASE_DINO_H * spriteScale;
+    game.dino.w = game.dino.h * professorAspect;
+    game.gravity = BASE_GRAVITY * spriteScale;
+    game.jumpPower = BASE_JUMP_POWER * spriteScale;
+    game.groundY = dinoCanvas.height - BASE_GROUND_OFFSET * spriteScale;
+
+    const groundTop = game.groundY - game.dino.h;
+    if (!game.running || wasOnGround || game.dino.y > groundTop) {
+      game.dino.y = groundTop;
+      if (!game.running || wasOnGround) {
+        game.dino.vy = 0;
+      }
+    }
+  }
+
+  function syncCanvasSize(force = false) {
+    const nextWidth = Math.max(1, Math.round(dinoCanvas.clientWidth || 340));
+    const nextHeight = Math.max(1, Math.round(dinoCanvas.clientHeight || 190));
+    const hasChanged = dinoCanvas.width !== nextWidth || dinoCanvas.height !== nextHeight;
+    if (!force && !hasChanged) return false;
+
+    dinoCanvas.width = nextWidth;
+    dinoCanvas.height = nextHeight;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    bgGradient = null;
+    carpetGradient = null;
+    carpetGradientKey = "";
+    textWrapCache.clear();
+    recalculateGameMetrics();
+    return true;
+  }
+
   function updateStats() {
     if (scoreValue) {
       scoreValue.textContent = String(Math.floor(game.score));
@@ -1068,11 +1316,15 @@ function initDinoGame() {
 
   professorSprite.addEventListener("load", () => {
     professorSpriteReady = true;
+    if (professorSprite.naturalWidth && professorSprite.naturalHeight) {
+      professorAspect = professorSprite.naturalWidth / professorSprite.naturalHeight;
+      buildProfessorLayers();
+      recalculateGameMetrics();
+    }
     render();
   });
   professorSprite.src = "./assets/professor.png";
-
-  game.dino.y = game.groundY - game.dino.h;
+  syncCanvasSize(true);
 
   function onGround() {
     return game.dino.y >= game.groundY - game.dino.h - 0.5;
@@ -1082,12 +1334,14 @@ function initDinoGame() {
     game.running = true;
     game.status = "running";
     game.score = 0;
-    game.speed = baseSpeed;
+    game.speed = baseSpeed * spriteScale;
     game.spawnTimer = 0;
     game.spawnInterval = 132;
     game.obstacles = [];
     game.dino.y = game.groundY - game.dino.h;
     game.dino.vy = 0;
+    runCycle = 0;
+    hatBounceEndAt = 0;
     lastFrameAt = 0;
     accumulatorMs = 0;
     milestoneIndex = 0;
@@ -1110,8 +1364,8 @@ function initDinoGame() {
       sizeBoost = 1.18 + Math.random() * 0.16;
     }
     const scale = baseScale * sizeBoost;
-    const width = (48 + Math.random() * 10) * scale;
-    const height = (40 + Math.random() * 7) * scale;
+    const width = (48 + Math.random() * 10) * scale * spriteScale;
+    const height = (40 + Math.random() * 7) * scale * spriteScale;
     const hitboxOffsetX = veryLargeVariant ? width * 0.22 : width * 0.2;
     const hitboxOffsetY = veryLargeVariant ? height * 0.66 : height * 0.62;
     const hitboxW = veryLargeVariant ? width * 0.56 : width * 0.6;
@@ -1130,15 +1384,6 @@ function initDinoGame() {
     game.spawnTimer = 0;
   }
 
-  function collides(a, b) {
-    return (
-      a.x < b.x + b.w &&
-      a.x + a.w > b.x &&
-      a.y < b.y + b.h &&
-      a.y + a.h > b.y
-    );
-  }
-
   function endGame(reason = "crash") {
     game.running = false;
     game.status = reason === "victory" ? "victory" : "gameover";
@@ -1155,7 +1400,7 @@ function initDinoGame() {
         gameMeta.textContent = `${victoryText} Счет: ${scoreRounded}.`;
       }
     } else if (gameMeta) {
-      gameMeta.textContent = `Игра окончена. Счет: ${scoreRounded}. Рекорд: ${game.best}.`;
+      gameMeta.textContent = `Вы споткнулись об закон. Это повод разобраться в нем лучше! Счет: ${scoreRounded}. Рекорд: ${game.best}.`;
     }
     updateStats();
     render();
@@ -1183,30 +1428,48 @@ function initDinoGame() {
       spawnObstacle();
     }
 
-    const body = {
-      x: game.dino.x + 11,
-      y: game.dino.y + 8,
-      w: game.dino.w - 20,
-      h: game.dino.h - 12,
-    };
+    const bodyInsetX = Math.round(11 * spriteScale);
+    const bodyInsetY = Math.round(8 * spriteScale);
+    const bodyX = game.dino.x + bodyInsetX;
+    const bodyY = game.dino.y + bodyInsetY;
+    const bodyW = Math.max(8, game.dino.w - Math.round(20 * spriteScale));
+    const bodyH = Math.max(10, game.dino.h - Math.round(12 * spriteScale));
+    const bodyRight = bodyX + bodyW;
+    const bodyBottom = bodyY + bodyH;
 
-    for (const obstacle of game.obstacles) {
+    let writeIndex = 0;
+    for (let idx = 0; idx < game.obstacles.length; idx += 1) {
+      const obstacle = game.obstacles[idx];
       obstacle.x -= game.speed;
-      const hitbox = {
-        x: obstacle.x + obstacle.hitboxOffsetX,
-        y: obstacle.y + obstacle.hitboxOffsetY,
-        w: obstacle.hitboxW,
-        h: obstacle.hitboxH,
-      };
-      if (collides(body, hitbox)) {
+      const hitboxX = obstacle.x + obstacle.hitboxOffsetX;
+      const hitboxY = obstacle.y + obstacle.hitboxOffsetY;
+      const hitboxRight = hitboxX + obstacle.hitboxW;
+      const hitboxBottom = hitboxY + obstacle.hitboxH;
+      if (
+        bodyX < hitboxRight &&
+        bodyRight > hitboxX &&
+        bodyY < hitboxBottom &&
+        bodyBottom > hitboxY
+      ) {
         endGame();
         return;
       }
+      if (obstacle.x + obstacle.w > -10) {
+        game.obstacles[writeIndex] = obstacle;
+        writeIndex += 1;
+      }
     }
-    game.obstacles = game.obstacles.filter((obstacle) => obstacle.x + obstacle.w > -10);
+    game.obstacles.length = writeIndex;
 
     game.score += 0.05;
-    game.speed = baseSpeed + Math.min(maxSpeedGain, game.score / 420);
+    const scaledBaseSpeed = baseSpeed * spriteScale;
+    const scaledMaxSpeedGain = maxSpeedGain * spriteScale;
+    game.speed = scaledBaseSpeed + Math.min(scaledMaxSpeedGain, game.score / 420);
+    if (onGround()) {
+      runCycle += Math.max(0.05, game.speed * 0.075);
+    } else {
+      runCycle += 0.02;
+    }
     applyMilestoneMessages();
     if (game.score >= victoryScore) {
       endGame("victory");
@@ -1232,6 +1495,22 @@ function initDinoGame() {
     return lines.length ? lines : [text];
   }
 
+  function getWrappedCanvasText(text, maxWidth) {
+    const normalizedText = String(text || "");
+    const widthKey = Math.max(1, Math.round(maxWidth));
+    const cacheKey = `${ctx.font}|${widthKey}|${normalizedText}`;
+    const cached = textWrapCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    const wrapped = wrapCanvasText(normalizedText, widthKey);
+    if (textWrapCache.size >= maxTextWrapCacheSize) {
+      textWrapCache.clear();
+    }
+    textWrapCache.set(cacheKey, wrapped);
+    return wrapped;
+  }
+
   function traceRoundedRect(pathCtx, x, y, w, h, radius) {
     const r = Math.max(0, Math.min(radius, w / 2, h / 2));
     pathCtx.beginPath();
@@ -1249,29 +1528,94 @@ function initDinoGame() {
 
   function render() {
     ctx.clearRect(0, 0, dinoCanvas.width, dinoCanvas.height);
-    ctx.fillStyle = bgGradient;
+    ctx.fillStyle = getBgGradient();
     ctx.fillRect(0, 0, dinoCanvas.width, dinoCanvas.height);
 
-    ctx.strokeStyle = "#951b81";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, game.groundY + 0.5);
-    ctx.lineTo(dinoCanvas.width, game.groundY + 0.5);
-    ctx.stroke();
+    const carpetTop = Math.max(0, Math.floor(game.groundY));
+    const carpetHeight = Math.max(12, Math.round(20 * spriteScale));
+    const carpetBottom = Math.min(dinoCanvas.height, carpetTop + carpetHeight);
+    ctx.fillStyle = getCarpetGradient(carpetTop, carpetBottom);
+    ctx.fillRect(0, carpetTop, dinoCanvas.width, carpetBottom - carpetTop);
+
+    ctx.fillStyle = "rgba(255, 225, 142, 0.96)";
+    ctx.fillRect(0, carpetTop, dinoCanvas.width, 2);
+    if (carpetBottom - carpetTop > 6) {
+      ctx.fillRect(0, carpetBottom - 2, dinoCanvas.width, 2);
+    }
 
     if (professorSpriteReady) {
-      ctx.drawImage(
-        professorSprite,
-        game.dino.x,
-        game.dino.y,
-        game.dino.w,
-        game.dino.h,
-      );
+      const runningOnGround = game.running && onGround();
+      const drawX = game.dino.x;
+      const drawY = game.dino.y - 2;
+      const srcW = professorSprite.naturalWidth || 220;
+      const srcH = professorSprite.naturalHeight || 297;
+      let hasActiveHatBounce = false;
+      if (game.running && hatBounceEndAt > 0) {
+        const now = performance.now();
+        if (now >= hatBounceEndAt) {
+          hatBounceEndAt = 0;
+        } else {
+          hasActiveHatBounce = true;
+        }
+      }
+
+      if (hasActiveHatBounce && professorBodySprite && professorHatSprite) {
+        const hatLift = -Math.max(3, HAT_BOUNCE_PX * spriteScale);
+        ctx.drawImage(professorBodySprite, drawX, drawY, game.dino.w, game.dino.h);
+        ctx.drawImage(professorHatSprite, drawX, drawY + hatLift, game.dino.w, game.dino.h);
+      } else {
+        ctx.drawImage(professorSprite, drawX, drawY, game.dino.w, game.dino.h);
+      }
+
+      if (runningOnGround) {
+        const legStartRatio = 0.8;
+        const srcLegY = Math.floor(srcH * legStartRatio);
+        const srcLegH = Math.max(1, srcH - srcLegY);
+        const destLegY = drawY + game.dino.h * legStartRatio;
+        const destLegH = Math.max(1, game.dino.h - game.dino.h * legStartRatio);
+        const halfSrcW = Math.floor(srcW / 2);
+        const halfDestW = game.dino.w / 2;
+        const legShift = Math.sin(runCycle) * Math.max(0.6, game.dino.w * 0.035);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(drawX, destLegY, halfDestW, destLegH);
+        ctx.clip();
+        ctx.drawImage(
+          professorSprite,
+          0,
+          srcLegY,
+          halfSrcW,
+          srcLegH,
+          drawX + legShift,
+          destLegY,
+          halfDestW,
+          destLegH,
+        );
+        ctx.restore();
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(drawX + halfDestW, destLegY, game.dino.w - halfDestW, destLegH);
+        ctx.clip();
+        ctx.drawImage(
+          professorSprite,
+          halfSrcW,
+          srcLegY,
+          srcW - halfSrcW,
+          srcLegH,
+          drawX + halfDestW - legShift,
+          destLegY,
+          game.dino.w - halfDestW,
+          destLegH,
+        );
+        ctx.restore();
+      }
     } else {
       ctx.fillStyle = "#272c3e";
-      ctx.fillRect(game.dino.x, game.dino.y, game.dino.w, game.dino.h);
+      ctx.fillRect(game.dino.x, game.dino.y - 2, game.dino.w, game.dino.h);
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(game.dino.x + 20, game.dino.y + 10, 5, 5);
+      ctx.fillRect(game.dino.x + 20, game.dino.y + 8, 5, 5);
     }
 
     game.obstacles.forEach((obstacle) => {
@@ -1279,13 +1623,7 @@ function initDinoGame() {
         ctx.save();
         traceRoundedRect(ctx, obstacle.x, obstacle.y, obstacle.w, obstacle.h, Math.min(6, obstacle.w * 0.18));
         ctx.clip();
-        ctx.drawImage(
-          scalesSprite,
-          obstacle.x,
-          obstacle.y,
-          obstacle.w,
-          obstacle.h,
-        );
+        ctx.drawImage(scalesSprite, obstacle.x, obstacle.y, obstacle.w, obstacle.h);
         ctx.restore();
       } else {
         ctx.fillStyle = "#272c3e";
@@ -1295,19 +1633,14 @@ function initDinoGame() {
 
     if (game.running && activeBannerText) {
       ctx.save();
-      ctx.font = '700 24px "Montserrat"';
+      ctx.font = '700 19px "Montserrat"';
       const maxWidth = dinoCanvas.width - 28;
-      const lines = wrapCanvasText(activeBannerText, maxWidth);
-      const lineHeight = 24;
-      const verticalPad = 8;
-      const boxY = 22;
+      const lines = getWrappedCanvasText(activeBannerText, maxWidth);
+      const lineHeight = 20;
+      const verticalPad = 6;
       const boxHeight = lines.length * lineHeight + verticalPad * 2;
-
-      ctx.fillStyle = "rgba(255,255,255,0.86)";
-      ctx.fillRect(8, boxY, dinoCanvas.width - 16, boxHeight);
-      ctx.strokeStyle = "rgba(149,27,129,0.36)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(8, boxY, dinoCanvas.width - 16, boxHeight);
+      const bannerBaseY = Math.round(dinoCanvas.height / 2 - dinoCanvas.height * 0.25);
+      const boxY = Math.max(8, Math.round(bannerBaseY - boxHeight / 2));
 
       ctx.fillStyle = "#951b81";
       ctx.textAlign = "center";
@@ -1323,39 +1656,52 @@ function initDinoGame() {
       ctx.fillStyle = "rgba(255,255,255,0.68)";
       ctx.fillRect(0, 0, dinoCanvas.width, dinoCanvas.height);
       ctx.fillStyle = "#272c3e";
-      ctx.font = game.status === "victory" ? '700 15px "Montserrat"' : '700 20px "Montserrat"';
+      const centerX = Math.round(dinoCanvas.width / 2);
+      const centerY = Math.round(dinoCanvas.height / 2);
       ctx.textAlign = "center";
-      const title =
-        game.status === "victory"
-          ? victoryText
-          : game.status === "gameover"
-            ? "Игра закончилась"
-            : "Нажмите для старта";
+      ctx.textBaseline = "middle";
+
       if (game.status === "victory") {
+        ctx.font = '700 15px "Montserrat"';
         const maxWidth = dinoCanvas.width - 26;
-        const lines = wrapCanvasText(title, maxWidth);
+        const lines = getWrappedCanvasText(victoryText, maxWidth);
         const lineHeight = 18;
-        const startY = dinoCanvas.height / 2 - ((lines.length - 1) * lineHeight) / 2 - 8;
+        const startY = Math.round(centerY - ((lines.length - 1) * lineHeight) / 2 - 8);
         lines.forEach((textLine, index) => {
-          ctx.fillText(textLine, dinoCanvas.width / 2, startY + index * lineHeight);
+          ctx.fillText(textLine, centerX, startY + index * lineHeight);
         });
+      } else if (game.status === "gameover") {
+        const gameOverBaseY = Math.round(centerY - dinoCanvas.height * 0.25);
+        ctx.font = '700 20px "Montserrat"';
+        ctx.fillText("Вы споткнулись об закон", centerX, gameOverBaseY);
+        ctx.font = '700 14px "Montserrat"';
+        ctx.fillText("Это повод разобраться в нем лучше!", centerX, gameOverBaseY + 24);
       } else {
-        ctx.fillText(title, dinoCanvas.width / 2, dinoCanvas.height / 2 - 3);
-      }
-      if (game.status === "gameover" || game.status === "victory") {
-        ctx.font = '700 12px "Montserrat"';
-        ctx.fillText(
-          "Нажмите для новой попытки",
-          dinoCanvas.width / 2,
-          dinoCanvas.height / 2 + 18,
+        ctx.font = '700 17px "Montserrat"';
+        const idleText = "Кажется, пора идти на слушание";
+        const idleLines = getWrappedCanvasText(idleText, dinoCanvas.width - 28);
+        const idleLineHeight = 20;
+        const idleStartY = Math.round(
+          centerY - dinoCanvas.height * 0.25 - ((idleLines.length - 1) * idleLineHeight) / 2,
         );
+        idleLines.forEach((textLine, index) => {
+          ctx.fillText(textLine, centerX, idleStartY + index * idleLineHeight);
+        });
       }
+
       ctx.textAlign = "start";
+      ctx.textBaseline = "alphabetic";
     }
   }
 
   function frame(timestamp) {
     if (!game.running) return;
+    if (document.hidden || activePanelName !== "dino") {
+      lastFrameAt = timestamp;
+      accumulatorMs = 0;
+      game.rafId = requestAnimationFrame(frame);
+      return;
+    }
     if (!lastFrameAt) {
       lastFrameAt = timestamp;
     }
@@ -1386,10 +1732,12 @@ function initDinoGame() {
     if (!game.running) return;
     if (onGround()) {
       game.dino.vy = game.jumpPower;
+      hatBounceEndAt = performance.now() + HAT_BOUNCE_DURATION_MS;
     }
   }
 
   function start() {
+    syncCanvasSize();
     reset();
     cancelAnimationFrame(game.rafId);
     game.rafId = requestAnimationFrame(frame);
@@ -1402,6 +1750,13 @@ function initDinoGame() {
     }
     jump();
   });
+  const handleGameResize = () => {
+    if (syncCanvasSize()) {
+      render();
+    }
+  };
+  window.addEventListener("resize", handleGameResize);
+  window.visualViewport?.addEventListener("resize", handleGameResize);
   window.addEventListener("keydown", (event) => {
     if (event.code === "Space" || event.code === "ArrowUp") {
       event.preventDefault();
@@ -1420,7 +1775,7 @@ function initDinoGame() {
   });
 
   if (gameMeta) {
-    gameMeta.textContent = `Рекорд: ${game.best}. Нажмите для старта.`;
+    gameMeta.textContent = `Рекорд: ${game.best}. Кажется, пора идти на слушание.`;
   }
   updateStats();
   render();
@@ -1445,3 +1800,4 @@ function init() {
 }
 
 init();
+

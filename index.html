@@ -10,8 +10,8 @@
       href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260214h" />
-    <script src="./app.js?v=20260214h" defer></script>
+    <link rel="stylesheet" href="./styles.css?v=20260214y" />
+    <script src="./app.js?v=20260214ap" defer></script>
   </head>
   <body>
     <main class="app">
@@ -21,7 +21,7 @@
             <img class="hero-logo" src="./assets/logo.svg" alt="Логотип компании" />
           </a>
         </div>
-        <p class="hero-welcome">Приветствуем вас на Переговорах!</p>
+        <p class="hero-welcome">Pacta sunt servanda</p>
       </header>
 
       <section class="menu-grid reveal">
@@ -61,11 +61,12 @@
             <div class="news-card-content">
               <p class="news-card-date">11.02.2026</p>
               <h3>
-                «Пепеляев Групп» и Rajah & Tann Asia расширяют присутствие на китайском рынке
+                «Пепеляев Групп» совместно с «Деловой Россией» подготовила проект поправок к актам
+                Банка России
               </h3>
               <p>
-                Стороны усиливают взаимодействие в рамках International Desk для сопровождения
-                трансграничных проектов.
+                Подготовлены предложения по корректировке регулирования для развития рынка и
+                устранения избыточных барьеров.
               </p>
               <span class="news-card-open">Открыть новость</span>
             </div>
@@ -73,10 +74,13 @@
           <a class="news-card news-link-card" href="./news/news-2026-02-06.html" aria-label="Открыть новость за 06.02.2026">
             <div class="news-card-content">
               <p class="news-card-date">06.02.2026</p>
-              <h3>Эксперты «Пепеляев Групп» вошли в рейтинг PRO BONO-300</h3>
+              <h3>
+                Партнер «Пепеляев Групп» вошла в состав рабочей группы АСИ по направлению
+                «Банкротство»
+              </h3>
               <p>
-                Юристы фирмы отмечены в первом рейтинге лучших pro bono-практик при поддержке
-                Правительства Москвы.
+                Эксперт компании присоединилась к работе по развитию практических решений в сфере
+                банкротства и антикризисных процедур.
               </p>
               <span class="news-card-open">Открыть новость</span>
             </div>
@@ -85,11 +89,11 @@
             <div class="news-card-content">
               <p class="news-card-date">13.01.2026</p>
               <h3>
-                Советник «Пепеляев Групп» выступила на Russia and CIS Hotel Investment Conference
+                Практику антимонопольного регулирования «Пепеляев Групп» возглавил Илья Тюленев
               </h3>
               <p>
-                Наталья Присекина приняла участие в отраслевой конференции по инвестициям в
-                гостиничный бизнес.
+                Новое назначение усиливает профильную экспертизу команды по антимонопольным
+                вопросам и защите бизнеса.
               </p>
               <span class="news-card-open">Открыть новость</span>
             </div>
@@ -101,17 +105,15 @@
         <button id="companyOrderOpenBtn" class="action-btn company-order-open-btn" type="button">
           Заказать на компанию
         </button>
-        <div class="panel-head">
-          <span class="subtle-pill">Подача: 5-10 мин</span>
-        </div>
         <div class="panel-room-picker">
           <label for="drinkRoomSelect">Переговорка для заказа</label>
           <select id="drinkRoomSelect" name="drinkRoom">
-            <option>Reception</option>
-            <option>Atlas</option>
-            <option>Orion</option>
-            <option>Delta</option>
-            <option>Neva</option>
+            <option value="">Выберите переговорку</option>
+            <option value="Reception">Reception</option>
+            <option value="Atlas">Atlas</option>
+            <option value="Orion">Orion</option>
+            <option value="Delta">Delta</option>
+            <option value="Neva">Neva</option>
           </select>
           <label for="drinkRecipient">Для кого, Имя/Отчество</label>
           <input
@@ -122,178 +124,32 @@
             placeholder="Например, Иван Иванович"
           />
         </div>
-        <div class="drink-list">
-          <article class="drink-card">
-            <div class="drink-info">
-              <h3>Эспрессо</h3>
-              <p>Крепкий кофе, 30 мл</p>
-            </div>
-            <div class="drink-actions">
-              <div class="drink-qty-block">
-                <span class="drink-qty-caption">Кол-во</span>
-                <div class="drink-stepper" role="group" aria-label="Количество напитка">
-                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
-                  <span class="drink-qty-value" aria-live="polite">1</span>
-                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
-                </div>
+        <div class="drink-single-order">
+          <label for="drinkSelect">Напитки</label>
+          <select id="drinkSelect" name="drinkSelect">
+            <option value="">Выберите напиток</option>
+            <option value="Эспрессо">Эспрессо</option>
+            <option value="Капучино">Капучино</option>
+            <option value="Чай зеленый">Чай зеленый</option>
+            <option value="Лимонад цитрус">Лимонад цитрус</option>
+            <option value="Американо">Американо</option>
+            <option value="Латте">Латте</option>
+            <option value="Чай Earl Grey">Чай Earl Grey</option>
+            <option value="Минеральная вода">Минеральная вода</option>
+            <option value="Апельсиновый сок">Апельсиновый сок</option>
+          </select>
+          <div id="drinkSelectionCard" class="drink-selection-card is-hidden" aria-live="polite">
+            <p id="drinkSelectionName" class="drink-selection-name"></p>
+            <div class="drink-qty-block">
+              <span class="drink-qty-caption">Кол-во</span>
+              <div id="singleDrinkStepper" class="drink-stepper" role="group" aria-label="Количество напитка">
+                <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
+                <span id="singleDrinkQtyValue" class="drink-qty-value" aria-live="polite">1</span>
+                <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
               </div>
-              <button class="action-btn order-btn" data-drink="Эспрессо" type="button">
-                Заказать
-              </button>
             </div>
-          </article>
-          <article class="drink-card">
-            <div class="drink-info">
-              <h3>Капучино</h3>
-              <p>Кофе с молочной пеной, 250 мл</p>
-            </div>
-            <div class="drink-actions">
-              <div class="drink-qty-block">
-                <span class="drink-qty-caption">Кол-во</span>
-                <div class="drink-stepper" role="group" aria-label="Количество напитка">
-                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
-                  <span class="drink-qty-value" aria-live="polite">1</span>
-                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
-                </div>
-              </div>
-              <button class="action-btn order-btn" data-drink="Капучино" type="button">
-                Заказать
-              </button>
-            </div>
-          </article>
-          <article class="drink-card">
-            <div class="drink-info">
-              <h3>Чай зеленый</h3>
-              <p>С жасмином, 300 мл</p>
-            </div>
-            <div class="drink-actions">
-              <div class="drink-qty-block">
-                <span class="drink-qty-caption">Кол-во</span>
-                <div class="drink-stepper" role="group" aria-label="Количество напитка">
-                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
-                  <span class="drink-qty-value" aria-live="polite">1</span>
-                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
-                </div>
-              </div>
-              <button class="action-btn order-btn" data-drink="Чай зеленый" type="button">
-                Заказать
-              </button>
-            </div>
-          </article>
-          <article class="drink-card">
-            <div class="drink-info">
-              <h3>Лимонад цитрус</h3>
-              <p>Охлажденный, 300 мл</p>
-            </div>
-            <div class="drink-actions">
-              <div class="drink-qty-block">
-                <span class="drink-qty-caption">Кол-во</span>
-                <div class="drink-stepper" role="group" aria-label="Количество напитка">
-                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
-                  <span class="drink-qty-value" aria-live="polite">1</span>
-                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
-                </div>
-              </div>
-              <button class="action-btn order-btn" data-drink="Лимонад цитрус" type="button">
-                Заказать
-              </button>
-            </div>
-          </article>
-          <article class="drink-card">
-            <div class="drink-info">
-              <h3>Американо</h3>
-              <p>Классический кофе, 180 мл</p>
-            </div>
-            <div class="drink-actions">
-              <div class="drink-qty-block">
-                <span class="drink-qty-caption">Кол-во</span>
-                <div class="drink-stepper" role="group" aria-label="Количество напитка">
-                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
-                  <span class="drink-qty-value" aria-live="polite">1</span>
-                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
-                </div>
-              </div>
-              <button class="action-btn order-btn" data-drink="Американо" type="button">
-                Заказать
-              </button>
-            </div>
-          </article>
-          <article class="drink-card">
-            <div class="drink-info">
-              <h3>Латте</h3>
-              <p>Мягкий молочный кофе, 300 мл</p>
-            </div>
-            <div class="drink-actions">
-              <div class="drink-qty-block">
-                <span class="drink-qty-caption">Кол-во</span>
-                <div class="drink-stepper" role="group" aria-label="Количество напитка">
-                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
-                  <span class="drink-qty-value" aria-live="polite">1</span>
-                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
-                </div>
-              </div>
-              <button class="action-btn order-btn" data-drink="Латте" type="button">
-                Заказать
-              </button>
-            </div>
-          </article>
-          <article class="drink-card">
-            <div class="drink-info">
-              <h3>Чай Earl Grey</h3>
-              <p>Черный чай с бергамотом, 300 мл</p>
-            </div>
-            <div class="drink-actions">
-              <div class="drink-qty-block">
-                <span class="drink-qty-caption">Кол-во</span>
-                <div class="drink-stepper" role="group" aria-label="Количество напитка">
-                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
-                  <span class="drink-qty-value" aria-live="polite">1</span>
-                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
-                </div>
-              </div>
-              <button class="action-btn order-btn" data-drink="Чай Earl Grey" type="button">
-                Заказать
-              </button>
-            </div>
-          </article>
-          <article class="drink-card">
-            <div class="drink-info">
-              <h3>Минеральная вода</h3>
-              <p>Газ/негаз на выбор, 500 мл</p>
-            </div>
-            <div class="drink-actions">
-              <div class="drink-qty-block">
-                <span class="drink-qty-caption">Кол-во</span>
-                <div class="drink-stepper" role="group" aria-label="Количество напитка">
-                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
-                  <span class="drink-qty-value" aria-live="polite">1</span>
-                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
-                </div>
-              </div>
-              <button class="action-btn order-btn" data-drink="Минеральная вода" type="button">
-                Заказать
-              </button>
-            </div>
-          </article>
-          <article class="drink-card">
-            <div class="drink-info">
-              <h3>Апельсиновый сок</h3>
-              <p>Охлажденный, 250 мл</p>
-            </div>
-            <div class="drink-actions">
-              <div class="drink-qty-block">
-                <span class="drink-qty-caption">Кол-во</span>
-                <div class="drink-stepper" role="group" aria-label="Количество напитка">
-                  <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
-                  <span class="drink-qty-value" aria-live="polite">1</span>
-                  <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
-                </div>
-              </div>
-              <button class="action-btn order-btn" data-drink="Апельсиновый сок" type="button">
-                Заказать
-              </button>
-            </div>
-          </article>
+          </div>
+          <button id="singleDrinkOrderBtn" class="action-btn order-btn" type="button" disabled>Заказать</button>
         </div>
       </section>
 
@@ -563,7 +419,7 @@
 
       <section id="panel-dino" class="panel hidden" data-panel="dino">
         <div class="dino-layout">
-          <h2 class="dino-title">PepeliaevJump</h2>
+          <h2 class="dino-title">PepJump</h2>
           <div class="game-stats" aria-live="polite">
             <div class="stat-item">
               <span class="stat-label">СЧЕТ</span>
@@ -580,7 +436,7 @@
               class="dino-canvas"
               width="340"
               height="190"
-              aria-label="Игра PepeliaevJump"
+              aria-label="Игра PepJump"
             ></canvas>
           </div>
           <p id="gameMeta" class="sr-only"></p>
@@ -647,6 +503,8 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
   </body>
 </html>
+
+
 
 
 
