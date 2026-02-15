@@ -325,13 +325,16 @@ function showToast(message) {
 function closeOrderPopup() {
   if (!orderPopup) return;
   orderPopup.classList.remove("open");
+  orderPopup.classList.remove("success-mode");
   orderPopup.setAttribute("aria-hidden", "true");
 }
 
-function showTimedPopup(title, message, minDurationMs = 3000, maxDurationMs = 4000) {
+function showTimedPopup(title, message, minDurationMs = 3000, maxDurationMs = 4000, options = {}) {
   if (!orderPopup || !orderPopupMessage || !orderPopupTitle) return;
+  const successMode = Boolean(options.success);
   orderPopupTitle.textContent = title;
   orderPopupMessage.textContent = message;
+  orderPopup.classList.toggle("success-mode", successMode);
   orderPopup.classList.add("open");
   orderPopup.setAttribute("aria-hidden", "false");
 
@@ -343,12 +346,12 @@ function showTimedPopup(title, message, minDurationMs = 3000, maxDurationMs = 40
   }, popupDuration);
 }
 
-function toDativeWord(rawWord, preferredGender = "") {
+function toGenitiveWord(rawWord, preferredGender = "") {
   const word = String(rawWord || "").trim();
   if (!word) return word;
   const lower = word.toLowerCase();
 
-  const keepAsIs = ["оглы", "кызы"];
+  const keepAsIs = ["\u043e\u0433\u043b\u044b", "\u043a\u044b\u0437\u044b"];
   if (keepAsIs.some((ending) => lower.endsWith(ending))) {
     return word;
   }
@@ -363,48 +366,70 @@ function toDativeWord(rawWord, preferredGender = "") {
 
   const replaceLast = (count, nextTail) => applySameCase(lower.slice(0, -count) + nextTail);
 
-  if (lower.endsWith("вич") || lower.endsWith("ич")) return applySameCase(`${lower}у`);
-  if (lower.endsWith("вна") || lower.endsWith("ична")) return replaceLast(1, "е");
-  if (lower.endsWith("ия")) return replaceLast(2, "ии");
-  if (lower.endsWith("ья")) return replaceLast(2, "ье");
-  if (lower.endsWith("я")) return replaceLast(1, "е");
-  if (lower.endsWith("а")) return replaceLast(1, "е");
-  if (lower.endsWith("й")) return replaceLast(1, "ю");
-  if (lower.endsWith("ь")) return replaceLast(1, preferredGender === "female" ? "и" : "ю");
+  if (lower.endsWith("\u0438\u044f")) return replaceLast(2, "\u0438\u0438");
+  if (lower.endsWith("\u044c\u044f")) return replaceLast(2, "\u044c\u0438");
+  if (lower.endsWith("\u044f")) return replaceLast(1, "\u0438");
+  if (lower.endsWith("\u0430")) {
+    const beforeA = lower.slice(-2, -1);
+    const softSet = ["\u0433", "\u043a", "\u0445", "\u0436", "\u0447", "\u0448", "\u0449", "\u0446"];
+    return replaceLast(1, softSet.includes(beforeA) ? "\u0438" : "\u044b");
+  }
+  if (lower.endsWith("\u0439")) return replaceLast(1, "\u044f");
+  if (lower.endsWith("\u044c")) return replaceLast(1, preferredGender === "female" ? "\u0438" : "\u044f");
 
-  if (/[бвгджзклмнпрстфхцчшщ]$/i.test(lower)) return applySameCase(`${lower}у`);
+  if (/[\u0431\u0432\u0433\u0434\u0436\u0437\u043a\u043b\u043c\u043d\u043f\u0440\u0441\u0442\u0444\u0445\u0446\u0447\u0448\u0449]$/i.test(lower)) {
+    return applySameCase(`${lower}\u0430`);
+  }
+
   return word;
 }
 
-function toRecipientDative(recipientRaw) {
+function toRecipientGenitive(recipientRaw) {
   const raw = String(recipientRaw || "").trim();
-  if (!raw) return "гостю";
+  if (!raw) return "\u0433\u043e\u0441\u0442\u044f";
 
   const parts = raw.split(/\s+/);
   let detectedGender = "";
   if (parts.length >= 2) {
     const second = parts[1].toLowerCase();
-    if (second.endsWith("вич") || second.endsWith("РёС‡")) detectedGender = "male";
-    if (second.endsWith("вна") || second.endsWith("ична")) detectedGender = "female";
+    if (
+      second.endsWith("\u0432\u0438\u0447") ||
+      second.endsWith("\u0438\u0447") ||
+      second.endsWith("\u043e\u0433\u043b\u044b")
+    ) {
+      detectedGender = "male";
+    }
+    if (
+      second.endsWith("\u0432\u043d\u0430") ||
+      second.endsWith("\u0438\u0447\u043d\u0430") ||
+      second.endsWith("\u043a\u044b\u0437\u044b")
+    ) {
+      detectedGender = "female";
+    }
   }
 
   return parts
     .map((part) => {
       const chunks = part.split("-");
-      const converted = chunks.map((chunk) => toDativeWord(chunk, detectedGender)).join("-");
-      return converted;
+      return chunks.map((chunk) => toGenitiveWord(chunk, detectedGender)).join("-");
     })
     .join(" ");
 }
 
 function showOrderPopup(items, room, recipient, waitMin, waitMax) {
   const normalizedItems = Array.isArray(items) ? items : [];
-  const summary = normalizedItems
-    .map((item) => `${item.name} x${Math.max(1, Number(item.quantity) || 1)}`)
-    .join(", ");
-  const recipientDative = toRecipientDative(recipient);
-  const message = `Принесут: ${summary}. Куда: ${room}. Кому: ${recipientDative}. Ожидание: ${waitMin}-${waitMax} мин.`;
-  showTimedPopup("Заказ принят", message);
+  const recipientGenitive = toRecipientGenitive(recipient);
+  const itemsLines = normalizedItems
+    .map((item) => `- ${item.name}, ${Math.max(1, Number(item.quantity) || 1)}`)
+    .join("\n");
+
+  const message =
+    `\u0417\u0430\u043a\u0430\u0437 \u0434\u043b\u044f ${recipientGenitive}\n` +
+    `\u041f\u0435\u0440\u0435\u0433\u043e\u0432\u043e\u0440\u043a\u0430: ${room}\n` +
+    `\u0412\u0430\u043c \u043f\u0440\u0438\u043d\u0435\u0441\u0443\u0442:\n${itemsLines}\n` +
+    "\u0421\u043f\u0430\u0441\u0438\u0431\u043e \u0437\u0430 \u0437\u0430\u043a\u0430\u0437! \u041e\u0436\u0438\u0434\u0430\u0439\u0442\u0435.";
+
+  showTimedPopup("\u0417\u0430\u043a\u0430\u0437 \u043f\u0440\u0438\u043d\u044f\u0442", message, 5000, 5000, { success: true });
 }
 
 function showSupportPopup() {
@@ -1025,6 +1050,18 @@ function initCompanyOrderModal() {
       return;
     }
 
+    const companyName = companyOrderCompanyInput.value.trim();
+    if (!companyName) {
+      showTimedPopup(
+        "Укажите компанию",
+        "Заполните поле «Компания», чтобы оформить заказ.",
+        2200,
+        2600,
+      );
+      companyOrderCompanyInput.focus();
+      return;
+    }
+
     const orderInputs = Array.from(companyOrderItems.querySelectorAll(".company-order-qty-input"));
     const items = orderInputs
       .map((input) => ({
@@ -1042,23 +1079,22 @@ function initCompanyOrderModal() {
       );
       return;
     }
-
-    const companyName = companyOrderCompanyInput.value.trim() || "Компания не указана";
     setRoom(currentRoom);
 
     const waitMin = 7 + Math.floor(Math.random() * 3);
     const waitMax = waitMin + 3;
     const portionsTotal = items.reduce((total, item) => total + item.quantity, 0);
-    const shortSummary = items
-      .slice(0, 3)
-      .map((item) => `${item.drink} x${item.quantity}`)
-      .join(", ");
-    const remainingCount = Math.max(0, items.length - 3);
-    const summarySuffix = remainingCount ? ` и еще ${remainingCount}` : "";
+    const itemsLines = items.map((item) => `- ${item.drink}, ${item.quantity}`).join("\n");
 
     showTimedPopup(
-      "Заказ на компанию принят",
-      `${companyName}. Переговорка ${currentRoom}. ${shortSummary}${summarySuffix}. Порций: ${portionsTotal}. Ожидание: ${waitMin}-${waitMax} мин.`,
+      "\u0417\u0430\u043a\u0430\u0437 \u043d\u0430 \u043a\u043e\u043c\u043f\u0430\u043d\u0438\u044e \u043f\u0440\u0438\u043d\u044f\u0442",
+      `\u0417\u0430\u043a\u0430\u0437 \u0434\u043b\u044f ${companyName}\n` +
+        `\u041f\u0435\u0440\u0435\u0433\u043e\u0432\u043e\u0440\u043a\u0430: ${currentRoom}\n` +
+        `\u0412\u0430\u043c \u043f\u0440\u0438\u043d\u0435\u0441\u0443\u0442:\n${itemsLines}\n` +
+        "\u0421\u043f\u0430\u0441\u0438\u0431\u043e \u0437\u0430 \u0437\u0430\u043a\u0430\u0437! \u041e\u0436\u0438\u0434\u0430\u0439\u0442\u0435.",
+      5000,
+      5000,
+      { success: true },
     );
 
     storeLog("company_drink_order", {
@@ -1322,6 +1358,7 @@ function initQuiz() {
     updateQuizBadge();
     if (quizResult) {
       quizResult.textContent = "";
+      quizResult.classList.remove("is-wrong-feedback");
     }
     if (quizMark) {
       quizMark.textContent = "";
@@ -1363,6 +1400,7 @@ function initQuiz() {
       }
       if (quizResult) {
         quizResult.textContent = "Верно!";
+        quizResult.classList.remove("is-wrong-feedback");
       }
     } else {
       if (quizMark) {
@@ -1371,6 +1409,7 @@ function initQuiz() {
       }
       if (quizResult) {
         quizResult.textContent = `Неверно. Правильный ответ: ${current.options[current.correctIndex]}`;
+        quizResult.classList.add("is-wrong-feedback");
       }
     }
 
@@ -1398,6 +1437,7 @@ function initQuiz() {
       const percent = Math.round((quizState.correctCount / quizState.questions.length) * 100);
       if (quizResult) {
         quizResult.textContent = `Итог: ${quizState.correctCount} из ${quizState.questions.length}`;
+        quizResult.classList.remove("is-wrong-feedback");
       }
       showQuizFinalOverlay(percent);
       quizState.completionTimeoutId = window.setTimeout(() => {
@@ -2302,6 +2342,16 @@ function initDinoGame() {
   window.addEventListener("resize", handleGameResize);
   window.visualViewport?.addEventListener("resize", handleGameResize);
   window.addEventListener("keydown", (event) => {
+    const target = event.target;
+    const isEditableTarget =
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      (target instanceof HTMLElement && target.isContentEditable);
+    if (isEditableTarget) {
+      return;
+    }
+
     if (event.code === "Space" || event.code === "ArrowUp") {
       event.preventDefault();
       if (!game.running) {

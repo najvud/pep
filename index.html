@@ -68,7 +68,6 @@
                 Подготовлены предложения по корректировке регулирования для развития рынка и
                 устранения избыточных барьеров.
               </p>
-              <span class="news-card-open">Открыть новость</span>
             </div>
           </a>
           <a class="news-card news-link-card" href="./news/news-2026-02-06.html" aria-label="Открыть новость за 06.02.2026">
@@ -82,7 +81,6 @@
                 Эксперт компании присоединилась к работе по развитию практических решений в сфере
                 банкротства и антикризисных процедур.
               </p>
-              <span class="news-card-open">Открыть новость</span>
             </div>
           </a>
           <a class="news-card news-link-card" href="./news/news-2026-01-13.html" aria-label="Открыть новость за 13.01.2026">
@@ -95,7 +93,6 @@
                 Новое назначение усиливает профильную экспертизу команды по антимонопольным
                 вопросам и защите бизнеса.
               </p>
-              <span class="news-card-open">Открыть новость</span>
             </div>
           </a>
         </div>
@@ -127,14 +124,9 @@
       </section>
 
       <section id="panel-support" class="panel hidden" data-panel="support">
-        <div class="panel-head">
-          <h2>Вызов тех. специалиста</h2>
-          <span class="subtle-pill">Ожидание: ~7 мин</span>
-        </div>
         <form id="supportForm" class="support-form">
           <label>
-            Переговорка
-            <select id="roomSelect" name="room" required>
+            <select id="roomSelect" name="room" required aria-label="Переговорка">
               <option value="" selected disabled>Выберите переговорку</option>
               <option value="Reception">Reception</option>
               <option>Atlas</option>
@@ -144,8 +136,7 @@
             </select>
           </label>
           <label>
-            Проблема
-            <select id="issueSelect" name="issue" required>
+            <select id="issueSelect" name="issue" required aria-label="Проблема">
               <option value="" selected disabled>С какой проблемой вы столкнулись?</option>
               <option value="Нет сигнала на экране">Нет сигнала на экране</option>
               <option value="Не работает HDMI">Не работает HDMI</option>
@@ -154,6 +145,7 @@
               <option value="Другое">Другое</option>
             </select>
           </label>
+          <p class="support-wait-time" aria-live="polite">Ожидание: ~7 мин</p>
           <div class="support-visual" aria-hidden="true"></div>
           <button class="action-btn submit-btn" type="submit">
             Вызвать специалиста
@@ -451,7 +443,7 @@
             Закрыть
           </button>
         </div>
-        <form id="companyOrderForm" class="company-order-form">
+        <form id="companyOrderForm" class="company-order-form" novalidate>
           <select id="companyOrderRoomSelect" name="companyOrderRoom" aria-label="Переговорка"></select>
           <input
             id="companyOrderCompanyInput"
