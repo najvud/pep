@@ -88,14 +88,19 @@ button,
   font-size: clamp(0.94rem, 3.4vw, 1.08rem);
 }
 
+.app.compact-layout .hero-datetime {
+  margin: 1px auto 7px;
+  font-size: 0.96rem;
+}
+
 .app.compact-layout .menu-grid {
   margin-top: 4px;
   gap: 6px;
 }
 
 .app.compact-layout .menu-btn {
-  min-height: clamp(36px, 5.6dvh, 50px);
-  padding: 6px 6px;
+  min-height: clamp(30px, 4.8dvh, 42px);
+  padding: 5px 6px;
   border-radius: 2px;
 }
 
@@ -136,14 +141,16 @@ button,
 
 .app.compact-layout.drinks-mode .panel {
   min-height: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .app.compact-layout.drinks-mode #panel-drinks {
-  flex: 0 0 auto;
-  min-height: clamp(260px, 46dvh, 420px);
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  padding-top: 10px;
   padding-bottom: max(10px, env(safe-area-inset-bottom));
-  overflow: visible;
+  overflow: hidden;
 }
 
 .app.compact-layout .panel-head {
@@ -180,8 +187,16 @@ button,
 }
 
 .app.compact-layout .quiz-question {
-  margin-top: 2px;
+  margin-top: 14px;
   font-size: clamp(0.9rem, 3.3vw, 1.03rem);
+}
+
+.app.compact-layout .quiz-progress-row {
+  margin-top: 14px;
+}
+
+.app.compact-layout .quiz-options {
+  padding-top: 14px;
 }
 
 .app.compact-layout .quiz-option {
@@ -242,6 +257,17 @@ button,
   text-wrap: balance;
 }
 
+.hero-datetime {
+  margin: clamp(2px, 0.5dvh, 6px) auto clamp(8px, 1.4dvh, 14px);
+  text-align: center;
+  color: #6f1f67;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(1.02rem, 3.7vw, 1.2rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+
 .menu-grid {
   margin: 0;
   margin-top: clamp(6px, 1.4dvh, 14px);
@@ -253,8 +279,8 @@ button,
 .menu-btn {
   border: 1px solid rgba(71, 12, 63, 0.65);
   border-radius: 2px;
-  padding: 8px 8px;
-  min-height: clamp(46px, 7.6dvh, 62px);
+  padding: 6px 8px;
+  min-height: clamp(38px, 6.6dvh, 54px);
   text-align: center;
   color: #ffffff;
   background: linear-gradient(180deg, #a52d97 0%, #8e1f81 100%);
@@ -295,7 +321,7 @@ button,
   display: block;
   font-family: "Montserrat", sans-serif;
   font-size: clamp(0.84rem, 2.95vw, 0.96rem);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.005em;
   color: #ffffff;
   line-height: 1.2;
@@ -303,6 +329,27 @@ button,
 
 .menu-hint {
   display: none;
+}
+
+.drinks-guest-note {
+  display: none;
+  margin: 10px 0 0;
+  padding: 0 4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.78rem, 2.9vw, 0.9rem);
+  line-height: 1.35;
+  text-align: center;
+  color: var(--accent-2);
+}
+
+.app.drinks-mode .drinks-guest-note {
+  display: block;
+}
+
+@media (max-width: 760px) {
+  .app.drinks-mode .drinks-guest-note {
+    display: none;
+  }
 }
 
 .panel {
@@ -349,6 +396,10 @@ button,
 
 #panel-news {
   gap: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
 }
 
 .news-list {
@@ -558,29 +609,38 @@ button,
 }
 
 #panel-drinks {
-  flex: 0 0 auto;
-  min-height: clamp(260px, 46dvh, 420px);
-  gap: 0;
-  overflow: visible;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 8px;
+  overflow: hidden;
   touch-action: pan-y;
+  justify-content: flex-start;
+  align-items: stretch;
+}
+
+#panel-drinks > * {
+  width: 100%;
+  margin: 0;
 }
 
 .company-order-open-btn {
   width: 100%;
-  margin: 0 0 10px;
-  min-height: 40px;
+  margin: 0 0 2px;
+  min-height: 42px;
   font-size: 0.82rem;
 }
 
 .panel-room-picker {
   display: grid;
   gap: 6px;
-  margin: 0 0 8px;
+  margin: 0 0 2px;
+  width: 100%;
 }
 
 .panel-room-picker label {
   font-size: 0.72rem;
   color: var(--accent-2);
+  text-align: left;
 }
 
 .panel-room-picker select,
@@ -626,90 +686,182 @@ button,
   color: #8a90a9;
 }
 
-.drink-single-order {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  align-content: start;
-  gap: 8px;
+.panel-room-picker select.drinks-native-select {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
-.drink-single-order label {
-  font-size: 0.72rem;
-  color: var(--accent-2);
+.drinks-custom-select {
+  position: relative;
+  width: 100%;
 }
 
-.drink-single-order select {
-  border: 1px solid rgba(39, 44, 62, 0.16);
+.drinks-custom-select-trigger {
+  position: relative;
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid rgba(39, 44, 62, 0.2);
   border-radius: 10px;
-  background-color: #ffffff;
+  background: #ffffff;
   color: var(--accent-2);
-  font-family: inherit;
-  font-size: 0.8rem;
-  padding: 7px 30px 7px 9px;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M2 2.25L7 7L12 2.25' fill='none' stroke='%2358627f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 14px 9px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+  padding: 9px 34px 9px 10px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 2px 6px rgba(39, 44, 62, 0.06);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.drink-single-order select:focus-visible {
-  outline: none;
-  border-color: rgba(149, 27, 129, 0.35);
-  box-shadow: 0 0 0 2px rgba(149, 27, 129, 0.08);
+.drinks-custom-select-trigger::after {
+  content: "";
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid #951b81;
+  border-bottom: 2px solid #951b81;
+  transform: translateY(-65%) rotate(45deg);
+  transition: transform 0.16s ease;
 }
 
-.drink-selection-card {
-  border: 1px solid var(--border);
+.drinks-custom-select.is-placeholder .drinks-custom-select-trigger {
+  color: #8a90a9;
+  font-weight: 500;
+}
+
+.drinks-custom-select.open .drinks-custom-select-trigger {
+  border-color: rgba(149, 27, 129, 0.5);
+  box-shadow: 0 0 0 2px rgba(149, 27, 129, 0.1);
+}
+
+.drinks-custom-select.open .drinks-custom-select-trigger::after {
+  transform: translateY(-35%) rotate(-135deg);
+}
+
+.drinks-custom-select-menu {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 44;
+  max-height: min(220px, 34dvh);
+  overflow-y: auto;
+  border: 1px solid rgba(39, 44, 62, 0.22);
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(39, 44, 62, 0.16);
+}
+
+.drinks-custom-select.open .drinks-custom-select-menu {
+  display: block;
+}
+
+.drinks-custom-select-option {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  color: #2f3650;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.24;
+  text-align: left;
+  padding: 9px 10px;
+}
+
+.drinks-custom-select-option + .drinks-custom-select-option {
+  border-top: 1px solid rgba(39, 44, 62, 0.08);
+}
+
+.drinks-custom-select-option:hover {
+  background: #f6f1f9;
+  color: #7f1f73;
+}
+
+.drinks-custom-select-option.is-selected {
+  background: #f1e7f5;
+  color: #951b81;
+}
+
+.drinks-custom-select-option.is-current {
+  display: none;
+}
+
+.drinks-custom-select-option.is-disabled {
+  color: #8a90a9;
+  font-weight: 500;
+}
+
+.drink-catalog {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-content: start;
+  padding-right: 2px;
+  padding-bottom: 2px;
+}
+
+.drink-card {
+  border: 1px solid #d8dceb;
   border-radius: 12px;
   background: #ffffff;
-  padding: 10px;
+  padding: 8px 7px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
   align-items: center;
-  gap: 10px;
+  gap: 7px;
+  min-height: 132px;
 }
 
-.drink-selection-name {
+.drink-card-media {
+  height: 44px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #f7ecf5 0%, #f1f4fb 100%);
+  border: 1px solid rgba(149, 27, 129, 0.14);
+  font-size: 1.34rem;
+  line-height: 1;
+}
+
+.drink-card-name {
   margin: 0;
-  font-size: clamp(0.92rem, 3.3vw, 1.02rem);
-  font-weight: 700;
+  min-height: 2.4em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(0.74rem, 2.9vw, 0.82rem);
   line-height: 1.2;
+  font-weight: 700;
   color: var(--accent);
+}
+
+.drink-card-stepper {
+  grid-template-columns: 24px 1fr 24px;
+  min-height: 30px;
+}
+
+.drink-card-stepper .qty-btn {
+  font-size: 0.96rem;
 }
 
 .is-hidden {
   display: none !important;
-}
-
-.drink-selection-card .drink-qty-block {
-  width: 86px;
-  max-width: 86px;
-  margin-left: -10px;
-}
-
-.drink-selection-card .drink-qty-caption {
-  display: none;
-}
-
-.drink-selection-card .drink-stepper {
-  grid-template-columns: 22px 1fr 22px;
-  min-height: 28px;
-}
-
-.drink-qty-block {
-  display: grid;
-  gap: 4px;
-  max-width: 160px;
-}
-
-.drink-qty-caption {
-  font-size: 0.66rem;
-  font-weight: 700;
-  text-align: center;
-  color: var(--accent-2);
 }
 
 .drink-stepper {
@@ -757,6 +909,7 @@ button,
 
 #panel-drinks .order-btn {
   width: 100%;
+  margin-top: 2px;
   padding: 9px 10px;
   font-size: 0.78rem;
   font-family: inherit;
@@ -776,10 +929,6 @@ button,
   border: 1px solid rgba(39, 44, 62, 0.22);
 }
 
-#panel-drinks .drink-single-order select {
-  border: 1px solid rgba(39, 44, 62, 0.16);
-}
-
 #panel-drinks .panel-room-picker input:focus-visible {
   outline: none;
   border-color: rgba(149, 27, 129, 0.38);
@@ -794,17 +943,27 @@ button,
 }
 
 @media (max-width: 360px) {
-  #panel-drinks .drink-selection-card {
-    grid-template-columns: minmax(0, 1fr) 86px;
-    gap: 8px;
+  .drink-catalog {
+    gap: 7px;
   }
 
-  #panel-drinks .drink-selection-card .drink-stepper {
+  .drink-card {
+    min-height: 124px;
+    padding: 7px 6px;
+  }
+
+  .drink-card-media {
+    height: 40px;
+    font-size: 1.18rem;
+  }
+
+  .drink-card-stepper {
     grid-template-columns: 22px 1fr 22px;
+    min-height: 28px;
   }
 
-  #panel-drinks .drink-stepper {
-    grid-template-columns: 30px 1fr 30px;
+  .drink-card-stepper .qty-btn {
+    font-size: 0.92rem;
   }
 
   #panel-drinks .order-btn {
@@ -816,27 +975,46 @@ button,
 .quiz-wrap {
   flex: 1;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 10px;
+  grid-template-rows: auto auto auto 1fr;
+  gap: 0;
   min-height: 0;
 }
 
-#panel-quiz .panel-head h2 {
-  font-size: clamp(0.98rem, 3.4vw, 1.12rem);
-}
-
 .quiz-question {
-  margin: 4px 0 0;
+  margin: clamp(16px, 3.2dvh, 30px) 0 0;
   font-size: clamp(1.02rem, 3.9vw, 1.16rem);
   line-height: 1.34;
   color: var(--accent-2);
 }
 
+.quiz-progress-row {
+  display: flex;
+  justify-content: center;
+  margin-top: clamp(22px, 4.2dvh, 40px);
+}
+
+.quiz-score-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 74px;
+  border-radius: 999px;
+  border: 1px solid rgba(149, 27, 129, 0.28);
+  padding: 5px 14px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #ffffff;
+  background: linear-gradient(180deg, #a52d97 0%, #8e1f81 100%);
+}
+
 .quiz-options {
   min-height: 0;
   display: grid;
-  align-content: center;
+  align-content: start;
   gap: 8px;
+  padding-top: clamp(20px, 3.8dvh, 34px);
 }
 
 .quiz-option {
@@ -867,10 +1045,20 @@ button,
 
 .quiz-feedback {
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 8px;
-  min-height: 1.5em;
-  padding-top: 2px;
+  min-height: 0;
+  padding: 0 2px;
+  align-self: stretch;
+}
+
+.quiz-feedback .result {
+  min-height: 0;
+  font-size: clamp(0.95rem, 3.9vw, 1.1rem);
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
 }
 
 .quiz-mark {
@@ -897,7 +1085,7 @@ button,
   padding: 7px 8px;
   font-family: "Montserrat", sans-serif;
   font-size: 0.74rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.01em;
   color: #ffffff;
   background: var(--accent);
@@ -946,6 +1134,7 @@ button,
 
 #panel-support {
   gap: 0;
+  overflow: hidden;
 }
 
 #panel-support .support-form {
@@ -955,6 +1144,195 @@ button,
   gap: 8px;
   justify-content: flex-start;
   min-height: 0;
+}
+
+#panel-support .support-form label {
+  position: relative;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #3a4057;
+}
+
+#panel-support .support-form select {
+  min-height: 42px;
+  border: 1px solid rgba(39, 44, 62, 0.2);
+  border-radius: 12px;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='10' viewBox='0 0 15 10'%3E%3Cpath d='M2 2.25L7.5 8L13 2.25' fill='none' stroke='%23951b81' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 15px 10px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 2px 6px rgba(39, 44, 62, 0.06);
+  padding: 10px 34px 10px 12px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--accent-2);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+#panel-support .support-form select:focus-visible {
+  border-color: rgba(149, 27, 129, 0.5);
+  box-shadow: 0 0 0 3px rgba(149, 27, 129, 0.12);
+}
+
+#panel-support .support-form select:invalid {
+  color: #8a90a9;
+  font-weight: 500;
+}
+
+#panel-support .support-form option {
+  color: var(--accent-2);
+}
+
+#panel-support .support-form select option {
+  background-color: #ffffff;
+  color: #2f3650;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+#panel-support .support-form select option[value=""] {
+  color: #8a90a9;
+  font-weight: 500;
+}
+
+#panel-support .support-form select option:checked {
+  background: linear-gradient(180deg, #f7ecf6 0%, #efe4f2 100%);
+  color: #951b81;
+}
+
+#panel-support .support-form select.support-native-select {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#panel-support .support-custom-select {
+  position: relative;
+  width: 100%;
+}
+
+#panel-support .support-custom-select-trigger {
+  position: relative;
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(39, 44, 62, 0.2);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--accent-2);
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+  padding: 10px 36px 10px 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 2px 6px rgba(39, 44, 62, 0.06);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+}
+
+#panel-support .support-custom-select-trigger::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #951b81;
+  border-bottom: 2px solid #951b81;
+  transform: translateY(-65%) rotate(45deg);
+  transition: transform 0.16s ease;
+}
+
+#panel-support .support-custom-select.is-placeholder .support-custom-select-trigger {
+  color: #8a90a9;
+  font-weight: 500;
+}
+
+#panel-support .support-custom-select.open .support-custom-select-trigger {
+  border-color: rgba(149, 27, 129, 0.5);
+  box-shadow: 0 0 0 3px rgba(149, 27, 129, 0.12);
+}
+
+#panel-support .support-custom-select.open .support-custom-select-trigger::after {
+  transform: translateY(-35%) rotate(-135deg);
+}
+
+#panel-support .support-custom-select.is-invalid .support-custom-select-trigger {
+  border-color: rgba(207, 73, 110, 0.62);
+  box-shadow: 0 0 0 2px rgba(207, 73, 110, 0.12);
+}
+
+#panel-support .support-custom-select-menu {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 45;
+  max-height: min(240px, 38dvh);
+  overflow-y: auto;
+  border: 1px solid rgba(39, 44, 62, 0.22);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 14px 28px rgba(39, 44, 62, 0.18);
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+  transform-origin: top center;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.2s ease;
+}
+
+#panel-support .support-custom-select.open .support-custom-select-menu {
+  display: block;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+#panel-support .support-custom-select-option {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  color: #2f3650;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+#panel-support .support-custom-select-option + .support-custom-select-option {
+  border-top: 1px solid rgba(39, 44, 62, 0.08);
+}
+
+#panel-support .support-custom-select-option:hover {
+  background: #f6f1f9;
+  color: #7f1f73;
+}
+
+#panel-support .support-custom-select-option.is-selected {
+  background: #f1e7f5;
+  color: #951b81;
+}
+
+#panel-support .support-custom-select-option.is-current {
+  display: none;
+}
+
+#panel-support .support-custom-select-option.is-disabled {
+  color: #8a90a9;
+  font-weight: 500;
+  cursor: default;
 }
 
 .support-visual {
@@ -1316,6 +1694,122 @@ button,
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 14px 9px;
+}
+
+.company-order-form select.company-room-native-select {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.company-room-custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.company-room-custom-select-trigger {
+  position: relative;
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid rgba(39, 44, 62, 0.2);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--accent-2);
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+  padding: 8px 32px 8px 10px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 2px 6px rgba(39, 44, 62, 0.06);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.company-room-custom-select-trigger::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #951b81;
+  border-bottom: 2px solid #951b81;
+  transform: translateY(-65%) rotate(45deg);
+  transition: transform 0.16s ease;
+}
+
+.company-room-custom-select.is-placeholder .company-room-custom-select-trigger {
+  color: #8a90a9;
+  font-weight: 500;
+}
+
+.company-room-custom-select.open .company-room-custom-select-trigger {
+  border-color: rgba(149, 27, 129, 0.5);
+  box-shadow: 0 0 0 2px rgba(149, 27, 129, 0.1);
+}
+
+.company-room-custom-select.open .company-room-custom-select-trigger::after {
+  transform: translateY(-35%) rotate(-135deg);
+}
+
+.company-room-custom-select-menu {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 47;
+  max-height: min(210px, 30dvh);
+  overflow-y: auto;
+  border: 1px solid rgba(39, 44, 62, 0.22);
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 14px 26px rgba(39, 44, 62, 0.18);
+}
+
+.company-room-custom-select.open .company-room-custom-select-menu {
+  display: block;
+}
+
+.company-room-custom-select-option {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  color: #2f3650;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.24;
+  text-align: left;
+  padding: 8px 10px;
+}
+
+.company-room-custom-select-option + .company-room-custom-select-option {
+  border-top: 1px solid rgba(39, 44, 62, 0.08);
+}
+
+.company-room-custom-select-option:hover {
+  background: #f6f1f9;
+  color: #7f1f73;
+}
+
+.company-room-custom-select-option.is-selected {
+  background: #f1e7f5;
+  color: #951b81;
+}
+
+.company-room-custom-select-option.is-current {
+  display: none;
+}
+
+.company-room-custom-select-option.is-disabled {
+  color: #8a90a9;
+  font-weight: 500;
 }
 
 .company-order-form input {

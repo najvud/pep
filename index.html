@@ -10,8 +10,8 @@
       href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260214y" />
-    <script src="./app.js?v=20260214ap" defer></script>
+    <link rel="stylesheet" href="./styles.css?v=20260215i" />
+    <script src="./app.js?v=20260215f" defer></script>
   </head>
   <body>
     <main class="app">
@@ -21,8 +21,8 @@
             <img class="hero-logo" src="./assets/logo.svg" alt="Логотип компании" />
           </a>
         </div>
-        <p class="hero-welcome">Pacta sunt servanda</p>
       </header>
+      <p id="globalDateTime" class="hero-datetime" aria-live="polite"></p>
 
       <section class="menu-grid reveal">
         <button class="menu-btn active" data-target="news" type="button">
@@ -38,7 +38,7 @@
           <span class="menu-hint">Вызов в переговорку за 1 минуту</span>
         </button>
         <button class="menu-btn" data-target="quiz" type="button">
-          <span class="menu-title">Юридическая викторина</span>
+          <span class="menu-title">Викторина</span>
           <span class="menu-hint">Короткий вопрос по практике</span>
         </button>
         <button class="menu-btn" data-target="feedback" type="button">
@@ -51,11 +51,11 @@
         </button>
       </section>
 
+      <p class="drinks-guest-note">
+        Уважаемые гости! Здесь вы можете выбрать то, что вам принесут в указанную переговорку.
+      </p>
+
       <section id="panel-news" class="panel reveal" data-panel="news">
-        <div class="panel-head">
-          <h2>Новости компании</h2>
-          <span id="newsDate" class="subtle-pill"></span>
-        </div>
         <div class="news-list">
           <a class="news-card news-link-card" href="./news/news-2026-02-11.html" aria-label="Открыть новость за 11.02.2026">
             <div class="news-card-content">
@@ -106,8 +106,7 @@
           Заказать на компанию
         </button>
         <div class="panel-room-picker">
-          <label for="drinkRoomSelect">Переговорка для заказа</label>
-          <select id="drinkRoomSelect" name="drinkRoom">
+          <select id="drinkRoomSelect" name="drinkRoom" aria-label="Переговорка для заказа">
             <option value="">Выберите переговорку</option>
             <option value="Reception">Reception</option>
             <option value="Atlas">Atlas</option>
@@ -115,42 +114,16 @@
             <option value="Delta">Delta</option>
             <option value="Neva">Neva</option>
           </select>
-          <label for="drinkRecipient">Для кого, Имя/Отчество</label>
           <input
             id="drinkRecipient"
             name="drinkRecipient"
             type="text"
             maxlength="70"
-            placeholder="Например, Иван Иванович"
+            placeholder="Для кого, Имя Отчество"
           />
         </div>
-        <div class="drink-single-order">
-          <label for="drinkSelect">Напитки</label>
-          <select id="drinkSelect" name="drinkSelect">
-            <option value="">Выберите напиток</option>
-            <option value="Эспрессо">Эспрессо</option>
-            <option value="Капучино">Капучино</option>
-            <option value="Чай зеленый">Чай зеленый</option>
-            <option value="Лимонад цитрус">Лимонад цитрус</option>
-            <option value="Американо">Американо</option>
-            <option value="Латте">Латте</option>
-            <option value="Чай Earl Grey">Чай Earl Grey</option>
-            <option value="Минеральная вода">Минеральная вода</option>
-            <option value="Апельсиновый сок">Апельсиновый сок</option>
-          </select>
-          <div id="drinkSelectionCard" class="drink-selection-card is-hidden" aria-live="polite">
-            <p id="drinkSelectionName" class="drink-selection-name"></p>
-            <div class="drink-qty-block">
-              <span class="drink-qty-caption">Кол-во</span>
-              <div id="singleDrinkStepper" class="drink-stepper" role="group" aria-label="Количество напитка">
-                <button class="qty-btn" data-step="-1" type="button" aria-label="Уменьшить количество">-</button>
-                <span id="singleDrinkQtyValue" class="drink-qty-value" aria-live="polite">1</span>
-                <button class="qty-btn" data-step="1" type="button" aria-label="Увеличить количество">+</button>
-              </div>
-            </div>
-          </div>
-          <button id="singleDrinkOrderBtn" class="action-btn order-btn" type="button" disabled>Заказать</button>
-        </div>
+        <div id="drinkCatalog" class="drink-catalog" aria-label="Позиции напитков"></div>
+        <button id="singleDrinkOrderBtn" class="action-btn order-btn" type="button" disabled>Заказать</button>
       </section>
 
       <section id="panel-support" class="panel hidden" data-panel="support">
@@ -162,7 +135,8 @@
           <label>
             Переговорка
             <select id="roomSelect" name="room" required>
-              <option>Reception</option>
+              <option value="" selected disabled>Выберите переговорку</option>
+              <option value="Reception">Reception</option>
               <option>Atlas</option>
               <option>Orion</option>
               <option>Delta</option>
@@ -172,6 +146,7 @@
           <label>
             Проблема
             <select id="issueSelect" name="issue" required>
+              <option value="" selected disabled>С какой проблемой вы столкнулись?</option>
               <option value="Нет сигнала на экране">Нет сигнала на экране</option>
               <option value="Не работает HDMI">Не работает HDMI</option>
               <option value="Проблемы со звуком">Проблемы со звуком</option>
@@ -188,11 +163,10 @@
       </section>
 
       <section id="panel-quiz" class="panel hidden" data-panel="quiz">
-        <div class="panel-head">
-          <h2>Юридическая викторина</h2>
-          <span id="quizScoreBadge" class="subtle-pill">1 из 15</span>
-        </div>
         <div class="quiz-wrap">
+          <div class="quiz-progress-row">
+            <span id="quizScoreBadge" class="quiz-score-pill">1/15</span>
+          </div>
           <p id="quizQuestion" class="quiz-question"></p>
           <div class="quiz-options">
             <button class="quiz-option" data-option-index="0" type="button"></button>
@@ -218,9 +192,9 @@
             >
 <img
               class="brochure-thumb"
-              src="https://www.pgplaw.ru/upload/iblock/1eb/4d8y5sx26kfurwi7k7lsslz2p2ro3u9h/oblozhka_prezentatsiya.png"
+              src="./assets/brochures/01_oblozhka_prezentatsiya.png"
               alt="Превью брошюры: Сделаем Ваш бизнес эффективным. Презентация о компании"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
             <h3>Сделаем Ваш бизнес эффективным. Презентация о компании</h3>
             </a>
@@ -235,9 +209,9 @@
             >
 <img
               class="brochure-thumb"
-              src="https://www.pgplaw.ru/upload/iblock/e5c/xkmky8msgbhdd4qav7jhocpi4g4nqctv/nalogi_prezentatsiya.png"
+              src="./assets/brochures/02_nalogi_prezentatsiya.png"
               alt="Превью брошюры: Налоговая практика. Презентация"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
             <h3>Налоговая практика. Презентация</h3>
             </a>
@@ -252,9 +226,9 @@
             >
 <img
               class="brochure-thumb"
-              src="https://www.pgplaw.ru/upload/medialibrary/dfe/9ivjgmulbxmvzgxq3ambpjr2rlb6ism6/corporate_pres_cover.png"
+              src="./assets/brochures/03_corporate_pres_cover.png"
               alt="Превью брошюры: Корпоративная практика. Презентация"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
             <h3>Корпоративная практика. Презентация</h3>
             </a>
@@ -269,9 +243,9 @@
             >
 <img
               class="brochure-thumb"
-              src="https://www.pgplaw.ru/upload/medialibrary/43f/xign3c7y4udgivy007ks9m3vin10snlx/dr_pres_cover.png"
+              src="./assets/brochures/04_dr_pres_cover.png"
               alt="Превью брошюры: Практика разрешения споров и медиации. Презентация"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
             <h3>Практика разрешения споров и медиации. Презентация</h3>
             </a>
@@ -286,9 +260,9 @@
             >
 <img
               class="brochure-thumb"
-              src="https://www.pgplaw.ru/upload/medialibrary/13c/guvjkxdpx0gwr1528ao5l66fiz5dbpi7/animonopolnaya_prezentatsiya.png"
+              src="./assets/brochures/05_animonopolnaya_prezentatsiya.png"
               alt="Превью брошюры: Антимонопольная практика. Презентация"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
             <h3>Антимонопольная практика. Презентация</h3>
             </a>
@@ -303,9 +277,9 @@
             >
 <img
               class="brochure-thumb"
-              src="https://www.pgplaw.ru/upload/medialibrary/112/6b029d1r2b753c7m2hfxserhpbrzyhbs/custom_cover.png"
+              src="./assets/brochures/06_custom_cover.png"
               alt="Превью брошюры: Таможенное право и внешнеторговое регулирование. Презентация практики"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
             <h3>Таможенное право и внешнеторговое регулирование. Презентация практики</h3>
             </a>
@@ -320,9 +294,9 @@
             >
 <img
               class="brochure-thumb"
-              src="https://www.pgplaw.ru/upload/iblock/a55/ng98z0meqii7uq0lu4l2wp0pbc2gej1v/ugolovnaya_prezentatsiya.png"
+              src="./assets/brochures/07_ugolovnaya_prezentatsiya.png"
               alt="Превью брошюры: Уголовно-правовая защита бизнеса. Презентация"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
             <h3>Уголовно-правовая защита бизнеса. Презентация</h3>
             </a>
@@ -337,9 +311,9 @@
             >
 <img
               class="brochure-thumb"
-              src="https://www.pgplaw.ru/upload/iblock/76c/26txi66ydq8vcq6wcy63xhzm45j52z4k/bankrotstvo_broshyura.png"
+              src="./assets/brochures/08_bankrotstvo_broshyura.png"
               alt="Превью брошюры: Банкротство и антикризисная защита бизнеса. Брошюра практики"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
             <h3>Банкротство и антикризисная защита бизнеса. Брошюра практики</h3>
             </a>
@@ -354,9 +328,9 @@
             >
 <img
               class="brochure-thumb"
-              src="https://www.pgplaw.ru/upload/iblock/ea3/dpjm2i15d4wl4teinsbaoa2lfqiqa0ml/cover_bancruptcy_pres.jpg"
+              src="./assets/brochures/09_cover_bancruptcy_pres.jpg"
               alt="Превью брошюры: Кому могут быть полезны услуги практики банкротства и антикризисной защиты бизнеса"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
             <h3>
               Кому могут быть полезны услуги практики банкротства и антикризисной защиты бизнеса
@@ -373,9 +347,9 @@
             >
 <img
               class="brochure-thumb"
-              src="https://www.pgplaw.ru/upload/iblock/fbb/pacg283s56zohwshzft033fs5ad7vlr1/trudovaya_prezentatsiya.png"
+              src="./assets/brochures/10_trudovaya_prezentatsiya.png"
               alt="Превью брошюры: Трудовое и миграционное право. Презентация практики"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
             <h3>Трудовое и миграционное право. Презентация практики</h3>
             </a>
@@ -390,9 +364,9 @@
             >
 <img
               class="brochure-thumb"
-              src="https://www.pgplaw.ru/upload/medialibrary/9b8/m0231imp3w8icw72exzloiuiaitvh9by/admin_cover.png"
+              src="./assets/brochures/11_admin_cover.png"
               alt="Превью брошюры: Административно-правовая защита бизнеса. Презентация практики"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
             <h3>Административно-правовая защита бизнеса. Презентация практики</h3>
             </a>
@@ -407,9 +381,9 @@
             >
 <img
               class="brochure-thumb"
-              src="https://www.pgplaw.ru/upload/iblock/510/3akzb44or2h7rqb37ifpncse1yt40fgy/ip_prezentatsiya.png"
+              src="./assets/brochures/12_ip_prezentatsiya.png"
               alt="Превью брошюры: Интеллектуальная собственность и товарные знаки. Презентация практики"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
             <h3>Интеллектуальная собственность и товарные знаки. Презентация практики</h3>
             </a>
@@ -478,15 +452,14 @@
           </button>
         </div>
         <form id="companyOrderForm" class="company-order-form">
-          <label for="companyOrderRoomSelect">Переговорка</label>
-          <select id="companyOrderRoomSelect" name="companyOrderRoom"></select>
-          <label for="companyOrderCompanyInput">Название компании</label>
+          <select id="companyOrderRoomSelect" name="companyOrderRoom" aria-label="Переговорка"></select>
           <input
             id="companyOrderCompanyInput"
             name="companyOrderCompany"
             type="text"
             maxlength="80"
-            placeholder="Например, ООО Вектор"
+            placeholder="Компания"
+            aria-label="Компания"
           />
           <div id="companyOrderItems" class="company-order-items"></div>
           <button class="action-btn company-order-submit" type="submit">Заказать</button>
@@ -503,6 +476,8 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
   </body>
 </html>
+
+
 
 
 

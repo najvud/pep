@@ -1,4 +1,15 @@
 const rooms = ["Reception", "Atlas", "Orion", "Delta", "Neva"];
+const DRINK_MENU_ITEMS = [
+  { id: "espresso", name: "Эспрессо", icon: "☕" },
+  { id: "cappuccino", name: "Капучино", icon: "☕" },
+  { id: "green-tea", name: "Чай зеленый", icon: "🍵" },
+  { id: "lemonade", name: "Лимонад цитрус", icon: "🍋" },
+  { id: "americano", name: "Американо", icon: "☕" },
+  { id: "latte", name: "Латте", icon: "🥛" },
+  { id: "earl-grey", name: "Чай Earl Grey", icon: "🫖" },
+  { id: "water", name: "Минеральная вода", icon: "💧" },
+  { id: "orange-juice", name: "Апельсиновый сок", icon: "🍊" },
+];
 
 const state = {
   selectedRoom: "Reception",
@@ -11,11 +22,7 @@ const panels = Array.from(document.querySelectorAll(".panel"));
 const roomSelect = document.getElementById("roomSelect");
 const drinkRoomSelect = document.getElementById("drinkRoomSelect");
 const drinkRecipientInput = document.getElementById("drinkRecipient");
-const drinkSelect = document.getElementById("drinkSelect");
-const drinkSelectionCard = document.getElementById("drinkSelectionCard");
-const drinkSelectionName = document.getElementById("drinkSelectionName");
-const singleDrinkStepper = document.getElementById("singleDrinkStepper");
-const singleDrinkQtyValue = document.getElementById("singleDrinkQtyValue");
+const drinkCatalog = document.getElementById("drinkCatalog");
 const singleDrinkOrderBtn = document.getElementById("singleDrinkOrderBtn");
 const companyOrderOpenBtn = document.getElementById("companyOrderOpenBtn");
 const companyOrderModal = document.getElementById("companyOrderModal");
@@ -33,7 +40,7 @@ const quizScoreBadge = document.getElementById("quizScoreBadge");
 const quizMark = document.getElementById("quizMark");
 const quizResult = document.getElementById("quizResult");
 const brochureLinks = Array.from(document.querySelectorAll("[data-brochure-title]"));
-const newsDate = document.getElementById("newsDate");
+const globalDateTime = document.getElementById("globalDateTime");
 const newsCards = Array.from(document.querySelectorAll("[data-news-card]"));
 const newsOverlay = document.getElementById("newsOverlay");
 const newsBackBtn = document.getElementById("newsBackBtn");
@@ -59,6 +66,9 @@ let lastViewportScale = 1;
 let lastViewportOffset = 0;
 let orderPopupTimeoutId = 0;
 let activePanelName = "news";
+let drinkRoomCustomSelectController = null;
+let companyRoomCustomSelectController = null;
+let supportCustomSelectControllers = [];
 const newsImageClasses = ["news-image-1", "news-image-2", "news-image-3", "news-image-4"];
 const LEGAL_QUIZ_QUESTIONS = [
   {
@@ -223,9 +233,6 @@ function detectRoomFromQuery() {
 
 function setRoom(roomName) {
   state.selectedRoom = roomName;
-  if (roomSelect) {
-    roomSelect.value = roomName;
-  }
 }
 
 function queueFitToViewport() {
@@ -390,10 +397,13 @@ function toRecipientDative(recipientRaw) {
     .join(" ");
 }
 
-function showOrderPopup(drink, room, recipient, waitMin, waitMax, quantity = 1) {
-  const count = Math.max(1, Number(quantity) || 1);
+function showOrderPopup(items, room, recipient, waitMin, waitMax) {
+  const normalizedItems = Array.isArray(items) ? items : [];
+  const summary = normalizedItems
+    .map((item) => `${item.name} x${Math.max(1, Number(item.quantity) || 1)}`)
+    .join(", ");
   const recipientDative = toRecipientDative(recipient);
-  const message = `${drink} x${count} для ${recipientDative}, переговорка ${room}. Время ожидания: ${waitMin}-${waitMax} мин.`;
+  const message = `Принесут: ${summary}. Куда: ${room}. Кому: ${recipientDative}. Ожидание: ${waitMin}-${waitMax} мин.`;
   showTimedPopup("Заказ принят", message);
 }
 
@@ -438,17 +448,31 @@ function initTopSection() {
     minute: "2-digit",
     hour12: false,
   });
-  const renderNewsDateTime = () => {
-    if (!newsDate) return;
+  const monthNames = [
+    "января",
+    "февраля",
+    "марта",
+    "апреля",
+    "мая",
+    "июня",
+    "июля",
+    "августа",
+    "сентября",
+    "октября",
+    "ноября",
+    "декабря",
+  ];
+  const renderGlobalDateTime = () => {
+    if (!globalDateTime) return;
     const now = new Date();
-    const datePart = `${String(now.getDate()).padStart(2, "0")}.${String(
-      now.getMonth() + 1,
-    ).padStart(2, "0")}.${String(now.getFullYear()).slice(-2)}`;
+    const day = now.getDate();
+    const month = monthNames[now.getMonth()] || "";
+    const year = now.getFullYear();
     const localTime = timeFormatter.format(now);
-    newsDate.textContent = `${datePart} ${localTime}`;
+    globalDateTime.textContent = `Сегодня ${day} ${month} ${year} ${localTime}`;
   };
-  renderNewsDateTime();
-  window.setInterval(renderNewsDateTime, 60000);
+  renderGlobalDateTime();
+  window.setInterval(renderGlobalDateTime, 60000);
 }
 
 function initLogoReloadLink() {
@@ -475,40 +499,229 @@ function initNavigation() {
   setActivePanel("news");
 }
 
+function initDrinkRoomCustomSelect() {
+  if (!drinkRoomSelect) return;
+  drinkRoomCustomSelectController?.destroy?.();
+  drinkRoomCustomSelectController = null;
+
+  const host = drinkRoomSelect.parentElement;
+  if (!host) return;
+
+  const shell = document.createElement("div");
+  shell.className = "drinks-custom-select";
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "drinks-custom-select-trigger";
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-expanded", "false");
+
+  const menu = document.createElement("div");
+  menu.className = "drinks-custom-select-menu";
+  menu.setAttribute("role", "listbox");
+
+  const optionButtons = [];
+  Array.from(drinkRoomSelect.options).forEach((option, index) => {
+    const optionButton = document.createElement("button");
+    optionButton.type = "button";
+    optionButton.className = "drinks-custom-select-option";
+    optionButton.dataset.value = option.value || "";
+    optionButton.dataset.index = String(index);
+    optionButton.textContent = option.textContent || "";
+    optionButton.disabled = Boolean(option.disabled);
+    if (option.disabled) {
+      optionButton.classList.add("is-disabled");
+    }
+    menu.append(optionButton);
+    optionButtons.push(optionButton);
+  });
+
+  const syncFromSelect = () => {
+    const selectedIndex = Math.max(0, drinkRoomSelect.selectedIndex);
+    const selectedOption = drinkRoomSelect.options[selectedIndex];
+    const hasValue = Boolean((drinkRoomSelect.value || "").trim());
+
+    trigger.textContent = selectedOption?.textContent || "";
+    shell.classList.toggle("is-placeholder", !hasValue);
+    optionButtons.forEach((btn, index) => {
+      btn.classList.toggle("is-current", index === selectedIndex);
+    });
+  };
+
+  const close = () => {
+    shell.classList.remove("open");
+    trigger.setAttribute("aria-expanded", "false");
+  };
+
+  const open = () => {
+    shell.classList.add("open");
+    trigger.setAttribute("aria-expanded", "true");
+  };
+
+  const toggle = () => {
+    if (shell.classList.contains("open")) {
+      close();
+    } else {
+      open();
+    }
+  };
+
+  const handleTriggerClick = () => {
+    toggle();
+  };
+
+  const handleMenuClick = (event) => {
+    const targetButton = event.target.closest(".drinks-custom-select-option");
+    if (!targetButton || targetButton.disabled) return;
+    const nextValue = targetButton.dataset.value || "";
+    drinkRoomSelect.value = nextValue;
+    drinkRoomSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    syncFromSelect();
+    close();
+  };
+
+  const handleSelectChange = () => {
+    syncFromSelect();
+  };
+
+  const handleOutsideClick = (event) => {
+    if (!shell.contains(event.target)) {
+      close();
+    }
+  };
+
+  const handleEscape = (event) => {
+    if (event.key === "Escape") {
+      close();
+    }
+  };
+
+  drinkRoomSelect.classList.add("drinks-native-select");
+  drinkRoomSelect.setAttribute("aria-hidden", "true");
+  drinkRoomSelect.tabIndex = -1;
+
+  shell.append(trigger, menu);
+  drinkRoomSelect.insertAdjacentElement("afterend", shell);
+
+  trigger.addEventListener("click", handleTriggerClick);
+  menu.addEventListener("click", handleMenuClick);
+  drinkRoomSelect.addEventListener("change", handleSelectChange);
+  document.addEventListener("pointerdown", handleOutsideClick);
+  window.addEventListener("keydown", handleEscape);
+
+  syncFromSelect();
+
+  drinkRoomCustomSelectController = {
+    close,
+    destroy: () => {
+      trigger.removeEventListener("click", handleTriggerClick);
+      menu.removeEventListener("click", handleMenuClick);
+      drinkRoomSelect.removeEventListener("change", handleSelectChange);
+      document.removeEventListener("pointerdown", handleOutsideClick);
+      window.removeEventListener("keydown", handleEscape);
+      shell.remove();
+      drinkRoomSelect.classList.remove("drinks-native-select");
+      drinkRoomSelect.removeAttribute("aria-hidden");
+      drinkRoomSelect.tabIndex = 0;
+    },
+  };
+}
+
 function initOrders() {
-  if (
-    !drinkRoomSelect ||
-    !drinkRecipientInput ||
-    !drinkSelect ||
-    !drinkSelectionCard ||
-    !drinkSelectionName ||
-    !singleDrinkStepper ||
-    !singleDrinkQtyValue ||
-    !singleDrinkOrderBtn
-  ) {
+  if (!drinkRoomSelect || !drinkRecipientInput || !drinkCatalog || !singleDrinkOrderBtn) {
     return;
   }
 
-  const setQuantity = (nextValue) => {
-    const clamped = Math.max(1, Math.min(9, nextValue));
-    singleDrinkQtyValue.textContent = String(clamped);
+  initDrinkRoomCustomSelect();
+
+  const quantitiesByDrink = new Map(DRINK_MENU_ITEMS.map((item) => [item.id, 0]));
+  const qtyValueByDrink = new Map();
+
+  const clampQty = (nextValue) => {
+    const parsed = Number.parseInt(String(nextValue || 0), 10);
+    if (!Number.isFinite(parsed)) return 0;
+    return Math.max(0, Math.min(9, parsed));
   };
 
-  const updateSelectionUi = () => {
-    const selectedDrink = (drinkSelect.value || "").trim();
-    const hasSelectedDrink = Boolean(selectedDrink);
-    drinkSelectionCard.classList.toggle("is-hidden", !hasSelectedDrink);
-    drinkSelectionName.textContent = hasSelectedDrink ? selectedDrink : "";
-    singleDrinkOrderBtn.disabled = !hasSelectedDrink;
+  const selectedItems = () =>
+    DRINK_MENU_ITEMS.map((item) => ({
+      id: item.id,
+      name: item.name,
+      quantity: clampQty(quantitiesByDrink.get(item.id) || 0),
+    })).filter((item) => item.quantity > 0);
+
+  const updateOrderButtonState = () => {
+    singleDrinkOrderBtn.disabled = !selectedItems().length;
   };
 
-  setQuantity(1);
-  updateSelectionUi();
+  const updateCardQty = (drinkId, nextQty) => {
+    const clamped = clampQty(nextQty);
+    quantitiesByDrink.set(drinkId, clamped);
+    const qtyNode = qtyValueByDrink.get(drinkId);
+    if (qtyNode) {
+      qtyNode.textContent = String(clamped);
+    }
+    updateOrderButtonState();
+  };
 
-  drinkSelect.addEventListener("change", () => {
-    setQuantity(1);
-    updateSelectionUi();
-  });
+  const renderDrinkCards = () => {
+    drinkCatalog.innerHTML = "";
+    qtyValueByDrink.clear();
+
+    DRINK_MENU_ITEMS.forEach((item) => {
+      const card = document.createElement("article");
+      card.className = "drink-card";
+      card.dataset.drinkId = item.id;
+
+      const media = document.createElement("div");
+      media.className = "drink-card-media";
+      media.setAttribute("aria-hidden", "true");
+      media.textContent = item.icon;
+
+      const title = document.createElement("h3");
+      title.className = "drink-card-name";
+      title.textContent = item.name;
+
+      const stepper = document.createElement("div");
+      stepper.className = "drink-card-stepper drink-stepper";
+      stepper.setAttribute("role", "group");
+      stepper.setAttribute("aria-label", `Количество: ${item.name}`);
+
+      const minusBtn = document.createElement("button");
+      minusBtn.type = "button";
+      minusBtn.className = "qty-btn";
+      minusBtn.textContent = "-";
+      minusBtn.setAttribute("aria-label", `Уменьшить количество: ${item.name}`);
+
+      const qtyValue = document.createElement("span");
+      qtyValue.className = "drink-qty-value drink-card-qty-value";
+      qtyValue.setAttribute("aria-live", "polite");
+      qtyValue.textContent = "0";
+
+      const plusBtn = document.createElement("button");
+      plusBtn.type = "button";
+      plusBtn.className = "qty-btn";
+      plusBtn.textContent = "+";
+      plusBtn.setAttribute("aria-label", `Увеличить количество: ${item.name}`);
+
+      minusBtn.addEventListener("click", () => {
+        const current = clampQty(quantitiesByDrink.get(item.id) || 0);
+        updateCardQty(item.id, current - 1);
+      });
+      plusBtn.addEventListener("click", () => {
+        const current = clampQty(quantitiesByDrink.get(item.id) || 0);
+        updateCardQty(item.id, current + 1);
+      });
+
+      stepper.append(minusBtn, qtyValue, plusBtn);
+      card.append(media, title, stepper);
+      drinkCatalog.append(card);
+      qtyValueByDrink.set(item.id, qtyValue);
+    });
+  };
+
+  renderDrinkCards();
+  updateOrderButtonState();
 
   drinkRoomSelect.addEventListener("change", () => {
     const selectedRoom = (drinkRoomSelect.value || "").trim();
@@ -517,44 +730,164 @@ function initOrders() {
     }
   });
 
-  singleDrinkStepper.querySelectorAll(".qty-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      const delta = Number.parseInt(button.dataset.step || "0", 10) || 0;
-      const current = Number.parseInt(singleDrinkQtyValue.textContent || "1", 10) || 1;
-      setQuantity(current + delta);
-    });
-  });
-
   singleDrinkOrderBtn.addEventListener("click", () => {
-    const selectedDrink = (drinkSelect.value || "").trim();
     const currentRoom = (drinkRoomSelect.value || "").trim();
     const recipient = drinkRecipientInput.value.trim();
-    const quantity = Math.max(1, Number.parseInt(singleDrinkQtyValue.textContent || "1", 10) || 1);
+    const items = selectedItems();
 
     if (!currentRoom) {
       showTimedPopup("Выберите переговорку", "Укажите переговорку для заказа.", 1800, 2200);
       return;
     }
 
-    if (!selectedDrink) {
-      showTimedPopup("Выберите напиток", "Сначала выберите позицию в списке напитков.", 1800, 2200);
+    if (!items.length) {
+      showTimedPopup("Добавьте напитки", "Выберите хотя бы одну позицию и укажите количество.", 1800, 2200);
       return;
     }
 
     setRoom(currentRoom);
     const waitMin = 5 + Math.floor(Math.random() * 3);
     const waitMax = waitMin + 2;
+    const portionsTotal = items.reduce((total, item) => total + item.quantity, 0);
 
-    showOrderPopup(selectedDrink, currentRoom, recipient, waitMin, waitMax, quantity);
+    showOrderPopup(items, currentRoom, recipient, waitMin, waitMax);
     storeLog("drink_order", {
-      drink: selectedDrink,
-      quantity,
+      items,
+      portionsTotal,
       room: currentRoom,
       recipient,
       waitMin,
       waitMax,
     });
   });
+}
+
+function initCompanyOrderRoomCustomSelect() {
+  if (!companyOrderRoomSelect) return;
+  companyRoomCustomSelectController?.destroy?.();
+  companyRoomCustomSelectController = null;
+
+  const host = companyOrderRoomSelect.parentElement;
+  if (!host) return;
+
+  const shell = document.createElement("div");
+  shell.className = "company-room-custom-select";
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "company-room-custom-select-trigger";
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-expanded", "false");
+
+  const menu = document.createElement("div");
+  menu.className = "company-room-custom-select-menu";
+  menu.setAttribute("role", "listbox");
+
+  const optionButtons = [];
+  Array.from(companyOrderRoomSelect.options).forEach((option, index) => {
+    const optionButton = document.createElement("button");
+    optionButton.type = "button";
+    optionButton.className = "company-room-custom-select-option";
+    optionButton.dataset.value = option.value || "";
+    optionButton.dataset.index = String(index);
+    optionButton.textContent = option.textContent || "";
+    optionButton.disabled = Boolean(option.disabled);
+    if (option.disabled) {
+      optionButton.classList.add("is-disabled");
+    }
+    menu.append(optionButton);
+    optionButtons.push(optionButton);
+  });
+
+  const syncFromSelect = () => {
+    const selectedIndex = Math.max(0, companyOrderRoomSelect.selectedIndex);
+    const selectedOption = companyOrderRoomSelect.options[selectedIndex];
+    const hasValue = Boolean((companyOrderRoomSelect.value || "").trim());
+
+    trigger.textContent = selectedOption?.textContent || "";
+    shell.classList.toggle("is-placeholder", !hasValue);
+    optionButtons.forEach((btn, index) => {
+      btn.classList.toggle("is-current", index === selectedIndex);
+    });
+  };
+
+  const close = () => {
+    shell.classList.remove("open");
+    trigger.setAttribute("aria-expanded", "false");
+  };
+
+  const open = () => {
+    shell.classList.add("open");
+    trigger.setAttribute("aria-expanded", "true");
+  };
+
+  const toggle = () => {
+    if (shell.classList.contains("open")) {
+      close();
+    } else {
+      open();
+    }
+  };
+
+  const handleTriggerClick = () => {
+    toggle();
+  };
+
+  const handleMenuClick = (event) => {
+    const targetButton = event.target.closest(".company-room-custom-select-option");
+    if (!targetButton || targetButton.disabled) return;
+    const nextValue = targetButton.dataset.value || "";
+    companyOrderRoomSelect.value = nextValue;
+    companyOrderRoomSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    syncFromSelect();
+    close();
+  };
+
+  const handleSelectChange = () => {
+    syncFromSelect();
+  };
+
+  const handleOutsideClick = (event) => {
+    if (!shell.contains(event.target)) {
+      close();
+    }
+  };
+
+  const handleEscape = (event) => {
+    if (event.key === "Escape") {
+      close();
+    }
+  };
+
+  companyOrderRoomSelect.classList.add("company-room-native-select");
+  companyOrderRoomSelect.setAttribute("aria-hidden", "true");
+  companyOrderRoomSelect.tabIndex = -1;
+
+  shell.append(trigger, menu);
+  companyOrderRoomSelect.insertAdjacentElement("afterend", shell);
+
+  trigger.addEventListener("click", handleTriggerClick);
+  menu.addEventListener("click", handleMenuClick);
+  companyOrderRoomSelect.addEventListener("change", handleSelectChange);
+  document.addEventListener("pointerdown", handleOutsideClick);
+  window.addEventListener("keydown", handleEscape);
+
+  syncFromSelect();
+
+  companyRoomCustomSelectController = {
+    close,
+    destroy: () => {
+      trigger.removeEventListener("click", handleTriggerClick);
+      menu.removeEventListener("click", handleMenuClick);
+      companyOrderRoomSelect.removeEventListener("change", handleSelectChange);
+      document.removeEventListener("pointerdown", handleOutsideClick);
+      window.removeEventListener("keydown", handleEscape);
+      shell.remove();
+      companyOrderRoomSelect.classList.remove("company-room-native-select");
+      companyOrderRoomSelect.removeAttribute("aria-hidden");
+      companyOrderRoomSelect.tabIndex = 0;
+    },
+  };
 }
 
 function initCompanyOrderModal() {
@@ -570,9 +903,7 @@ function initCompanyOrderModal() {
     return;
   }
 
-  const drinkNames = Array.from(drinkSelect?.options || [])
-    .map((option) => option.value?.trim() || "")
-    .filter(Boolean);
+  const drinkNames = DRINK_MENU_ITEMS.map((item) => item.name.trim()).filter(Boolean);
 
   const uniqueDrinkNames = Array.from(new Set(drinkNames));
 
@@ -658,12 +989,14 @@ function initCompanyOrderModal() {
   const openCompanyOrderModal = () => {
     syncRoomOptions();
     renderOrderRows();
+    initCompanyOrderRoomCustomSelect();
     companyOrderCompanyInput.value = "";
     companyOrderModal.classList.add("open");
     companyOrderModal.setAttribute("aria-hidden", "false");
   };
 
   const closeCompanyOrderModal = () => {
+    companyRoomCustomSelectController?.close?.();
     companyOrderModal.classList.remove("open");
     companyOrderModal.setAttribute("aria-hidden", "true");
   };
@@ -750,17 +1083,194 @@ function initOrderPopup() {
   });
 }
 
+function initSupportCustomSelects() {
+  if (!supportForm) return;
+  const supportSelects = Array.from(supportForm.querySelectorAll("select"));
+  if (!supportSelects.length) return;
+
+  supportCustomSelectControllers.forEach((controller) => controller.destroy?.());
+  supportCustomSelectControllers = [];
+
+  const closeAll = () => {
+    supportCustomSelectControllers.forEach((controller) => controller.close());
+  };
+
+  const buildController = (select) => {
+    const label = select.closest("label");
+    if (!label) return null;
+
+    const shell = document.createElement("div");
+    shell.className = "support-custom-select";
+
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "support-custom-select-trigger";
+    trigger.setAttribute("aria-haspopup", "listbox");
+    trigger.setAttribute("aria-expanded", "false");
+
+    const menu = document.createElement("div");
+    menu.className = "support-custom-select-menu";
+    menu.setAttribute("role", "listbox");
+
+    const optionButtons = [];
+    Array.from(select.options).forEach((option, index) => {
+      const optionButton = document.createElement("button");
+      optionButton.type = "button";
+      optionButton.className = "support-custom-select-option";
+      optionButton.dataset.value = option.value || "";
+      optionButton.dataset.index = String(index);
+      optionButton.textContent = option.textContent || "";
+      optionButton.disabled = Boolean(option.disabled);
+      if (option.disabled) {
+        optionButton.classList.add("is-disabled");
+      }
+      menu.append(optionButton);
+      optionButtons.push(optionButton);
+    });
+
+    const syncFromSelect = () => {
+      const selectedIndex = Math.max(0, select.selectedIndex);
+      const selectedOption = select.options[selectedIndex];
+      const selectedText = selectedOption?.textContent || "";
+      const hasValue = Boolean((select.value || "").trim());
+
+      trigger.textContent = selectedText;
+      shell.classList.toggle("is-placeholder", !hasValue);
+      shell.classList.remove("is-invalid");
+
+      optionButtons.forEach((btn, index) => {
+        btn.classList.toggle("is-current", index === selectedIndex);
+      });
+    };
+
+    const close = () => {
+      shell.classList.remove("open");
+      trigger.setAttribute("aria-expanded", "false");
+    };
+
+    const open = () => {
+      closeAll();
+      shell.classList.add("open");
+      trigger.setAttribute("aria-expanded", "true");
+    };
+
+    const toggle = () => {
+      if (shell.classList.contains("open")) {
+        close();
+      } else {
+        open();
+      }
+    };
+
+    const handleTriggerClick = () => {
+      toggle();
+    };
+
+    const handleMenuClick = (event) => {
+      const targetButton = event.target.closest(".support-custom-select-option");
+      if (!targetButton || targetButton.disabled) return;
+      const nextValue = targetButton.dataset.value || "";
+      select.value = nextValue;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      syncFromSelect();
+      close();
+    };
+
+    const handleSelectChange = () => {
+      syncFromSelect();
+    };
+
+    const handleInvalid = () => {
+      shell.classList.add("is-invalid");
+    };
+
+    select.classList.add("support-native-select");
+    select.setAttribute("aria-hidden", "true");
+    select.tabIndex = -1;
+
+    shell.append(trigger, menu);
+    label.append(shell);
+
+    trigger.addEventListener("click", handleTriggerClick);
+    menu.addEventListener("click", handleMenuClick);
+    select.addEventListener("change", handleSelectChange);
+    select.addEventListener("invalid", handleInvalid);
+
+    syncFromSelect();
+
+    return {
+      shell,
+      close,
+      sync: syncFromSelect,
+      destroy: () => {
+        trigger.removeEventListener("click", handleTriggerClick);
+        menu.removeEventListener("click", handleMenuClick);
+        select.removeEventListener("change", handleSelectChange);
+        select.removeEventListener("invalid", handleInvalid);
+        shell.remove();
+        select.classList.remove("support-native-select");
+        select.removeAttribute("aria-hidden");
+        select.tabIndex = 0;
+      },
+    };
+  };
+
+  supportCustomSelectControllers = supportSelects
+    .map((select) => buildController(select))
+    .filter(Boolean);
+
+  if (!supportCustomSelectControllers.length) return;
+
+  const handleOutsideClick = (event) => {
+    const insideAnyCustomSelect = supportCustomSelectControllers.some((controller) =>
+      controller.shell.contains(event.target),
+    );
+    if (!insideAnyCustomSelect) {
+      closeAll();
+    }
+  };
+
+  const handleEscape = (event) => {
+    if (event.key === "Escape") {
+      closeAll();
+    }
+  };
+
+  document.addEventListener("pointerdown", handleOutsideClick);
+  window.addEventListener("keydown", handleEscape);
+  supportForm.addEventListener("reset", () => {
+    window.setTimeout(() => {
+      supportCustomSelectControllers.forEach((controller) => controller.sync());
+      closeAll();
+    }, 0);
+  });
+}
+
 function initSupportForm() {
   if (!supportForm || !roomSelect || !issueSelect || !supportResult) return;
 
   roomSelect.addEventListener("change", () => {
-    setRoom(roomSelect.value);
+    const nextRoom = (roomSelect.value || "").trim();
+    if (nextRoom) {
+      setRoom(nextRoom);
+    }
   });
 
   supportForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    const room = roomSelect.value;
-    const issue = issueSelect.value;
+    const room = (roomSelect.value || "").trim();
+    const issue = (issueSelect.value || "").trim();
+
+    if (!room) {
+      showTimedPopup("Выберите переговорку", "Укажите переговорку для вызова тех. специалиста.", 1800, 2200);
+      return;
+    }
+
+    if (!issue) {
+      showTimedPopup("Укажите проблему", "Выберите описание проблемы для заявки.", 1800, 2200);
+      return;
+    }
+
     const ticket = `TS-${Math.floor(10000 + Math.random() * 90000)}`;
 
     setRoom(room);
@@ -775,7 +1285,6 @@ function initSupportForm() {
     });
 
     supportForm.reset();
-    roomSelect.value = room;
     queueFitToViewport();
   });
 }
@@ -796,7 +1305,7 @@ function initQuiz() {
     if (!quizScoreBadge) return;
     const total = quizState.questions.length || LEGAL_QUIZ_QUESTIONS.length;
     const current = Math.min(quizState.currentIndex + 1, total);
-    quizScoreBadge.textContent = `${current} из ${total}`;
+    quizScoreBadge.textContent = `${current}/${total}`;
   };
 
   const renderQuestion = () => {
@@ -835,6 +1344,7 @@ function initQuiz() {
     quizState.locked = true;
     const current = quizState.questions[quizState.currentIndex];
     const isCorrect = selectedIndex === current.correctIndex;
+    const answerReadDelay = isCorrect ? 950 : 4000;
 
     quizOptions.forEach((btn, idx) => {
       btn.disabled = true;
@@ -879,20 +1389,22 @@ function initQuiz() {
       window.setTimeout(() => {
         quizState.currentIndex += 1;
         renderQuestion();
-      }, 950);
+      }, answerReadDelay);
       return;
     }
 
-    updateQuizBadge();
-    const percent = Math.round((quizState.correctCount / quizState.questions.length) * 100);
-    if (quizResult) {
-      quizResult.textContent = `Итог: ${quizState.correctCount} из ${quizState.questions.length}`;
-    }
-    showQuizFinalOverlay(percent);
-    quizState.completionTimeoutId = window.setTimeout(() => {
-      closeQuizFinalOverlay();
-      restartQuiz();
-    }, 3200);
+    window.setTimeout(() => {
+      updateQuizBadge();
+      const percent = Math.round((quizState.correctCount / quizState.questions.length) * 100);
+      if (quizResult) {
+        quizResult.textContent = `Итог: ${quizState.correctCount} из ${quizState.questions.length}`;
+      }
+      showQuizFinalOverlay(percent);
+      quizState.completionTimeoutId = window.setTimeout(() => {
+        closeQuizFinalOverlay();
+        restartQuiz();
+      }, 3200);
+    }, answerReadDelay);
   };
 
   quizOptions.forEach((option, idx) => {
@@ -908,6 +1420,38 @@ function initQuiz() {
 
 function initBrochures() {
   if (!brochureLinks.length) return;
+
+  const brochureThumbs = Array.from(document.querySelectorAll(".brochure-thumb"));
+  if (brochureThumbs.length) {
+    brochureThumbs.forEach((img, idx) => {
+      img.decoding = "async";
+      img.fetchPriority = idx < 4 ? "high" : "low";
+      if (idx < 4) {
+        img.loading = "eager";
+      }
+    });
+
+    const warmupBrochureThumbs = () => {
+      brochureThumbs.forEach((img) => {
+        if (img.complete) return;
+        const src = img.currentSrc || img.src;
+        if (!src) return;
+        const preloader = new Image();
+        preloader.decoding = "async";
+        preloader.src = src;
+      });
+    };
+
+    const feedbackMenuBtn = menuButtons.find((btn) => btn.dataset.target === "feedback");
+    feedbackMenuBtn?.addEventListener("click", warmupBrochureThumbs, { once: true });
+
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(warmupBrochureThumbs, { timeout: 1400 });
+    } else {
+      window.setTimeout(warmupBrochureThumbs, 600);
+    }
+  }
+
   brochureLinks.forEach((link) => {
     link.addEventListener("click", () => {
       const title = link.dataset.brochureTitle || "Брошюра";
@@ -1789,6 +2333,7 @@ function init() {
   initOrderPopup();
   initOrders();
   initCompanyOrderModal();
+  initSupportCustomSelects();
   initSupportForm();
   initQuiz();
   initBrochures();
