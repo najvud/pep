@@ -429,7 +429,7 @@ function showOrderPopup(items, room, recipient, waitMin, waitMax) {
     `\u0412\u0430\u043c \u043f\u0440\u0438\u043d\u0435\u0441\u0443\u0442:\n${itemsLines}\n` +
     "\u0421\u043f\u0430\u0441\u0438\u0431\u043e \u0437\u0430 \u0437\u0430\u043a\u0430\u0437! \u041e\u0436\u0438\u0434\u0430\u0439\u0442\u0435.";
 
-  showTimedPopup("\u0417\u0430\u043a\u0430\u0437 \u043f\u0440\u0438\u043d\u044f\u0442", message, 5000, 5000, { success: true });
+  showTimedPopup("\u0417\u0430\u043a\u0430\u0437 \u043f\u0440\u0438\u043d\u044f\u0442", message, 7000, 7000, { success: true });
 }
 
 function showSupportPopup() {
@@ -449,15 +449,40 @@ function showQuizFinalOverlay(percent) {
   quizFinalOverlay.setAttribute("aria-hidden", "false");
 }
 
+function readLocalStorageNumber(key, fallback = 0) {
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return fallback;
+    return parsed;
+  } catch (error) {
+    return fallback;
+  }
+}
+
+function writeLocalStorage(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (error) {
+    // Ignore storage errors: UI flows must keep working.
+  }
+}
+
 function storeLog(type, payload) {
   const key = "reception_connect_events";
-  const previous = JSON.parse(localStorage.getItem(key) || "[]");
-  previous.push({
-    type,
-    payload,
-    at: new Date().toISOString(),
-  });
-  localStorage.setItem(key, JSON.stringify(previous.slice(-50)));
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    const previous = Array.isArray(parsed) ? parsed : [];
+    previous.push({
+      type,
+      payload,
+      at: new Date().toISOString(),
+    });
+    writeLocalStorage(key, JSON.stringify(previous.slice(-50)));
+  } catch (error) {
+    // Silent fallback: logging must never block main user flows.
+  }
 }
 
 function initTopSection() {
@@ -468,11 +493,8 @@ function initTopSection() {
     setRoom(state.selectedRoom);
   }
 
-  const timeFormatter = new Intl.DateTimeFormat("ru-RU", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  if (!globalDateTime) return;
+
   const monthNames = [
     "января",
     "февраля",
@@ -487,14 +509,30 @@ function initTopSection() {
     "ноября",
     "декабря",
   ];
+
+  const datePrefixNode = document.createTextNode("");
+  const timeWrap = document.createElement("span");
+  timeWrap.className = "hero-time";
+  const hourNode = document.createElement("span");
+  hourNode.className = "hero-time-hour";
+  const colonNode = document.createElement("span");
+  colonNode.className = "hero-time-colon";
+  colonNode.textContent = ":";
+  const minuteNode = document.createElement("span");
+  minuteNode.className = "hero-time-minute";
+  timeWrap.append(hourNode, colonNode, minuteNode);
+  globalDateTime.replaceChildren(datePrefixNode, document.createTextNode(" "), timeWrap);
+
   const renderGlobalDateTime = () => {
-    if (!globalDateTime) return;
     const now = new Date();
     const day = now.getDate();
     const month = monthNames[now.getMonth()] || "";
     const year = now.getFullYear();
-    const localTime = timeFormatter.format(now);
-    globalDateTime.textContent = `Сегодня ${day} ${month} ${year} ${localTime}`;
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    datePrefixNode.nodeValue = `Сегодня ${day} ${month} ${year}`;
+    hourNode.textContent = hours;
+    minuteNode.textContent = minutes;
   };
   renderGlobalDateTime();
   window.setInterval(renderGlobalDateTime, 60000);
@@ -546,12 +584,13 @@ function initDrinkRoomCustomSelect() {
   menu.setAttribute("role", "listbox");
 
   const optionButtons = [];
-  Array.from(drinkRoomSelect.options).forEach((option, index) => {
+  Array.from(drinkRoomSelect.options).forEach((option, optionIndex) => {
+    if (option.hidden) return;
     const optionButton = document.createElement("button");
     optionButton.type = "button";
     optionButton.className = "drinks-custom-select-option";
     optionButton.dataset.value = option.value || "";
-    optionButton.dataset.index = String(index);
+    optionButton.dataset.optionIndex = String(optionIndex);
     optionButton.textContent = option.textContent || "";
     optionButton.disabled = Boolean(option.disabled);
     if (option.disabled) {
@@ -568,8 +607,9 @@ function initDrinkRoomCustomSelect() {
 
     trigger.textContent = selectedOption?.textContent || "";
     shell.classList.toggle("is-placeholder", !hasValue);
-    optionButtons.forEach((btn, index) => {
-      btn.classList.toggle("is-current", index === selectedIndex);
+    optionButtons.forEach((btn) => {
+      const optionIndex = Number.parseInt(btn.dataset.optionIndex || "-1", 10);
+      btn.classList.toggle("is-current", optionIndex === selectedIndex);
     });
   };
 
@@ -675,8 +715,11 @@ function initOrders() {
       quantity: clampQty(quantitiesByDrink.get(item.id) || 0),
     })).filter((item) => item.quantity > 0);
 
+  const hasSelectedRoom = () => Boolean((drinkRoomSelect.value || "").trim());
+  const hasRecipient = () => Boolean(drinkRecipientInput.value.trim());
+
   const updateOrderButtonState = () => {
-    singleDrinkOrderBtn.disabled = !selectedItems().length;
+    singleDrinkOrderBtn.disabled = !(hasSelectedRoom() && hasRecipient() && selectedItems().length);
   };
 
   const updateCardQty = (drinkId, nextQty) => {
@@ -753,7 +796,9 @@ function initOrders() {
     if (selectedRoom) {
       setRoom(selectedRoom);
     }
+    updateOrderButtonState();
   });
+  drinkRecipientInput.addEventListener("input", updateOrderButtonState);
 
   singleDrinkOrderBtn.addEventListener("click", () => {
     const currentRoom = (drinkRoomSelect.value || "").trim();
@@ -767,6 +812,12 @@ function initOrders() {
 
     if (!items.length) {
       showTimedPopup("Добавьте напитки", "Выберите хотя бы одну позицию и укажите количество.", 1800, 2200);
+      return;
+    }
+
+    if (!recipient) {
+      showTimedPopup("Укажите получателя", "Заполните поле «Для кого, Имя Отчество».", 1800, 2200);
+      drinkRecipientInput.focus();
       return;
     }
 
@@ -784,6 +835,12 @@ function initOrders() {
       waitMin,
       waitMax,
     });
+
+    drinkRecipientInput.value = "";
+    // For each new order force room re-selection from placeholder.
+    drinkRoomSelect.value = "";
+    drinkRoomSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    updateOrderButtonState();
   });
 }
 
@@ -809,12 +866,13 @@ function initCompanyOrderRoomCustomSelect() {
   menu.setAttribute("role", "listbox");
 
   const optionButtons = [];
-  Array.from(companyOrderRoomSelect.options).forEach((option, index) => {
+  Array.from(companyOrderRoomSelect.options).forEach((option, optionIndex) => {
+    if (option.hidden) return;
     const optionButton = document.createElement("button");
     optionButton.type = "button";
     optionButton.className = "company-room-custom-select-option";
     optionButton.dataset.value = option.value || "";
-    optionButton.dataset.index = String(index);
+    optionButton.dataset.optionIndex = String(optionIndex);
     optionButton.textContent = option.textContent || "";
     optionButton.disabled = Boolean(option.disabled);
     if (option.disabled) {
@@ -831,8 +889,9 @@ function initCompanyOrderRoomCustomSelect() {
 
     trigger.textContent = selectedOption?.textContent || "";
     shell.classList.toggle("is-placeholder", !hasValue);
-    optionButtons.forEach((btn, index) => {
-      btn.classList.toggle("is-current", index === selectedIndex);
+    optionButtons.forEach((btn) => {
+      const optionIndex = Number.parseInt(btn.dataset.optionIndex || "-1", 10);
+      btn.classList.toggle("is-current", optionIndex === selectedIndex);
     });
   };
 
@@ -928,6 +987,11 @@ function initCompanyOrderModal() {
     return;
   }
 
+  const companyOrderSubmitBtn = companyOrderForm.querySelector("button[type='submit']");
+  if (!companyOrderSubmitBtn) {
+    return;
+  }
+
   const drinkNames = DRINK_MENU_ITEMS.map((item) => item.name.trim()).filter(Boolean);
 
   const uniqueDrinkNames = Array.from(new Set(drinkNames));
@@ -938,18 +1002,58 @@ function initCompanyOrderModal() {
     return Math.max(0, Math.min(99, parsed));
   };
 
+  const hasSelectedCompanyRoom = () => {
+    const roomValue = (companyOrderRoomSelect.value || "").trim();
+    const roomOption = companyOrderRoomSelect.options[companyOrderRoomSelect.selectedIndex] || null;
+    return Boolean(roomValue) && !roomOption?.disabled;
+  };
+
+  const hasCompanyItems = () =>
+    Array.from(companyOrderItems.querySelectorAll(".company-order-qty-input")).some(
+      (input) => clampQty(input.value) > 0,
+    );
+
+  const updateCompanyOrderSubmitState = () => {
+    const hasCompanyName = Boolean(companyOrderCompanyInput.value.trim());
+    companyOrderSubmitBtn.disabled = !(hasSelectedCompanyRoom() && hasCompanyName && hasCompanyItems());
+  };
+
   const syncRoomOptions = () => {
     companyOrderRoomSelect.innerHTML = "";
+    let hasPlaceholder = false;
+
     if (drinkRoomSelect?.options.length) {
       Array.from(drinkRoomSelect.options).forEach((option) => {
         const copiedOption = document.createElement("option");
         copiedOption.value = option.value;
         copiedOption.textContent = option.textContent || option.value;
+        copiedOption.disabled = Boolean(option.disabled);
+        copiedOption.hidden = Boolean(option.hidden);
+        if (copiedOption.value === "") {
+          hasPlaceholder = true;
+        }
         companyOrderRoomSelect.append(copiedOption);
       });
-      companyOrderRoomSelect.value = drinkRoomSelect.value;
+
+      if (!hasPlaceholder) {
+        const placeholderOption = document.createElement("option");
+        placeholderOption.value = "";
+        placeholderOption.textContent = "Выберите переговорку";
+        placeholderOption.disabled = true;
+        placeholderOption.hidden = true;
+        companyOrderRoomSelect.prepend(placeholderOption);
+      }
+
+      companyOrderRoomSelect.value = "";
       return;
     }
+
+    const placeholderOption = document.createElement("option");
+    placeholderOption.value = "";
+    placeholderOption.textContent = "Выберите переговорку";
+    placeholderOption.disabled = true;
+    placeholderOption.hidden = true;
+    companyOrderRoomSelect.append(placeholderOption);
 
     rooms.forEach((room) => {
       const option = document.createElement("option");
@@ -957,7 +1061,7 @@ function initCompanyOrderModal() {
       option.textContent = room;
       companyOrderRoomSelect.append(option);
     });
-    companyOrderRoomSelect.value = state.selectedRoom;
+    companyOrderRoomSelect.value = "";
   };
 
   const renderOrderRows = () => {
@@ -983,6 +1087,7 @@ function initCompanyOrderModal() {
       qtyInput.addEventListener("focus", () => {
         if ((qtyInput.value || "").trim() === "0") {
           qtyInput.value = "";
+          updateCompanyOrderSubmitState();
         }
       });
       qtyInput.addEventListener("input", () => {
@@ -990,16 +1095,20 @@ function initCompanyOrderModal() {
         const digitsOnly = raw.replace(/\D+/g, "");
         if (!digitsOnly) {
           qtyInput.value = "";
+          updateCompanyOrderSubmitState();
           return;
         }
         const normalized = Math.min(99, Number.parseInt(digitsOnly, 10) || 0);
         qtyInput.value = String(normalized);
+        updateCompanyOrderSubmitState();
       });
       qtyInput.addEventListener("change", () => {
         qtyInput.value = String(clampQty(qtyInput.value));
+        updateCompanyOrderSubmitState();
       });
       qtyInput.addEventListener("blur", () => {
         qtyInput.value = String(clampQty(qtyInput.value));
+        updateCompanyOrderSubmitState();
       });
 
       row.append(title, qtyInput);
@@ -1016,6 +1125,7 @@ function initCompanyOrderModal() {
     renderOrderRows();
     initCompanyOrderRoomCustomSelect();
     companyOrderCompanyInput.value = "";
+    updateCompanyOrderSubmitState();
     companyOrderModal.classList.add("open");
     companyOrderModal.setAttribute("aria-hidden", "false");
   };
@@ -1028,6 +1138,8 @@ function initCompanyOrderModal() {
 
   companyOrderOpenBtn.addEventListener("click", openCompanyOrderModal);
   companyOrderCloseBtn.addEventListener("click", closeCompanyOrderModal);
+  companyOrderRoomSelect.addEventListener("change", updateCompanyOrderSubmitState);
+  companyOrderCompanyInput.addEventListener("input", updateCompanyOrderSubmitState);
 
   companyOrderModal.addEventListener("click", (event) => {
     if (event.target === companyOrderModal) {
@@ -1092,8 +1204,8 @@ function initCompanyOrderModal() {
         `\u041f\u0435\u0440\u0435\u0433\u043e\u0432\u043e\u0440\u043a\u0430: ${currentRoom}\n` +
         `\u0412\u0430\u043c \u043f\u0440\u0438\u043d\u0435\u0441\u0443\u0442:\n${itemsLines}\n` +
         "\u0421\u043f\u0430\u0441\u0438\u0431\u043e \u0437\u0430 \u0437\u0430\u043a\u0430\u0437! \u041e\u0436\u0438\u0434\u0430\u0439\u0442\u0435.",
-      5000,
-      5000,
+      7000,
+      7000,
       { success: true },
     );
 
@@ -1106,6 +1218,10 @@ function initCompanyOrderModal() {
       waitMax,
     });
 
+    companyOrderCompanyInput.value = "";
+    companyOrderRoomSelect.value = "";
+    companyOrderRoomSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    updateCompanyOrderSubmitState();
     closeCompanyOrderModal();
   });
 }
@@ -1149,12 +1265,13 @@ function initSupportCustomSelects() {
     menu.setAttribute("role", "listbox");
 
     const optionButtons = [];
-    Array.from(select.options).forEach((option, index) => {
+    Array.from(select.options).forEach((option, optionIndex) => {
+      if (option.hidden) return;
       const optionButton = document.createElement("button");
       optionButton.type = "button";
       optionButton.className = "support-custom-select-option";
       optionButton.dataset.value = option.value || "";
-      optionButton.dataset.index = String(index);
+      optionButton.dataset.optionIndex = String(optionIndex);
       optionButton.textContent = option.textContent || "";
       optionButton.disabled = Boolean(option.disabled);
       if (option.disabled) {
@@ -1174,8 +1291,9 @@ function initSupportCustomSelects() {
       shell.classList.toggle("is-placeholder", !hasValue);
       shell.classList.remove("is-invalid");
 
-      optionButtons.forEach((btn, index) => {
-        btn.classList.toggle("is-current", index === selectedIndex);
+      optionButtons.forEach((btn) => {
+        const optionIndex = Number.parseInt(btn.dataset.optionIndex || "-1", 10);
+        btn.classList.toggle("is-current", optionIndex === selectedIndex);
       });
     };
 
@@ -1284,25 +1402,53 @@ function initSupportCustomSelects() {
 
 function initSupportForm() {
   if (!supportForm || !roomSelect || !issueSelect || !supportResult) return;
+  const supportSubmitBtn = supportForm.querySelector("button[type='submit']");
+  if (!supportSubmitBtn) return;
+
+  const getSupportValidity = () => {
+    const room = (roomSelect.value || "").trim();
+    const issue = (issueSelect.value || "").trim();
+    const roomOption = roomSelect.options[roomSelect.selectedIndex] || null;
+    const issueOption = issueSelect.options[issueSelect.selectedIndex] || null;
+    const roomValid = Boolean(room) && !roomOption?.disabled;
+    const issueValid = Boolean(issue) && !issueOption?.disabled;
+    return { room, issue, roomValid, issueValid };
+  };
+
+  const updateSupportSubmitState = () => {
+    const { roomValid, issueValid } = getSupportValidity();
+    supportSubmitBtn.disabled = !(roomValid && issueValid);
+  };
 
   roomSelect.addEventListener("change", () => {
+    supportResult.textContent = "";
     const nextRoom = (roomSelect.value || "").trim();
     if (nextRoom) {
       setRoom(nextRoom);
     }
+    updateSupportSubmitState();
+  });
+
+  issueSelect.addEventListener("change", () => {
+    supportResult.textContent = "";
+    updateSupportSubmitState();
+  });
+
+  supportForm.addEventListener("reset", () => {
+    window.setTimeout(updateSupportSubmitState, 0);
   });
 
   supportForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    const room = (roomSelect.value || "").trim();
-    const issue = (issueSelect.value || "").trim();
+    supportResult.textContent = "";
+    const { room, issue, roomValid, issueValid } = getSupportValidity();
 
-    if (!room) {
+    if (!roomValid) {
       showTimedPopup("Выберите переговорку", "Укажите переговорку для вызова тех. специалиста.", 1800, 2200);
       return;
     }
 
-    if (!issue) {
+    if (!issueValid) {
       showTimedPopup("Укажите проблему", "Выберите описание проблемы для заявки.", 1800, 2200);
       return;
     }
@@ -1323,6 +1469,8 @@ function initSupportForm() {
     supportForm.reset();
     queueFitToViewport();
   });
+
+  updateSupportSubmitState();
 }
 
 function initQuiz() {
@@ -1591,7 +1739,7 @@ function initDinoGame() {
     running: false,
     status: "idle",
     score: 0,
-    best: Number(localStorage.getItem("dino_best") || 0),
+    best: readLocalStorageNumber("dino_best", 0),
     speed: 2.1 * speedMultiplier,
     gravity: 0.42,
     jumpPower: -13.05,
@@ -1977,7 +2125,7 @@ function initDinoGame() {
     const scoreRounded = Math.floor(game.score);
     if (scoreRounded > game.best) {
       game.best = scoreRounded;
-      localStorage.setItem("dino_best", String(game.best));
+      writeLocalStorage("dino_best", String(game.best));
     }
     if (reason === "victory") {
       if (gameMeta) {

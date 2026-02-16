@@ -10,8 +10,8 @@
       href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260215i" />
-    <script src="./app.js?v=20260215f" defer></script>
+    <link rel="stylesheet" href="./styles.css?v=20260215l" />
+    <script src="./app.js?v=20260215h" defer></script>
   </head>
   <body>
     <main class="app">
@@ -104,7 +104,7 @@
         </button>
         <div class="panel-room-picker">
           <select id="drinkRoomSelect" name="drinkRoom" aria-label="Переговорка для заказа">
-            <option value="">Выберите переговорку</option>
+            <option value="" selected disabled hidden>Выберите переговорку</option>
             <option value="Reception">Reception</option>
             <option value="Atlas">Atlas</option>
             <option value="Orion">Orion</option>
@@ -124,10 +124,10 @@
       </section>
 
       <section id="panel-support" class="panel hidden" data-panel="support">
-        <form id="supportForm" class="support-form">
+        <form id="supportForm" class="support-form" novalidate>
           <label>
-            <select id="roomSelect" name="room" required aria-label="Переговорка">
-              <option value="" selected disabled>Выберите переговорку</option>
+            <select id="roomSelect" name="room" aria-label="Переговорка">
+              <option value="" selected disabled hidden>Выберите переговорку</option>
               <option value="Reception">Reception</option>
               <option>Atlas</option>
               <option>Orion</option>
@@ -136,7 +136,7 @@
             </select>
           </label>
           <label>
-            <select id="issueSelect" name="issue" required aria-label="Проблема">
+            <select id="issueSelect" name="issue" aria-label="Проблема">
               <option value="" selected disabled>С какой проблемой вы столкнулись?</option>
               <option value="Нет сигнала на экране">Нет сигнала на экране</option>
               <option value="Не работает HDMI">Не работает HDMI</option>
@@ -147,7 +147,7 @@
           </label>
           <p class="support-wait-time" aria-live="polite">Ожидание: ~7 мин</p>
           <div class="support-visual" aria-hidden="true"></div>
-          <button class="action-btn submit-btn" type="submit">
+          <button class="action-btn submit-btn" type="submit" disabled>
             Вызвать специалиста
           </button>
         </form>
@@ -454,7 +454,7 @@
             aria-label="Компания"
           />
           <div id="companyOrderItems" class="company-order-items"></div>
-          <button class="action-btn company-order-submit" type="submit">Заказать</button>
+          <button class="action-btn company-order-submit" type="submit" disabled>Заказать</button>
         </form>
       </article>
     </section>

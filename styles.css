@@ -31,6 +31,16 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+input::placeholder,
+textarea::placeholder {
+  transition: opacity 0.12s ease;
+}
+
+input:focus::placeholder,
+textarea:focus::placeholder {
+  opacity: 0;
+}
+
 button,
 [role="button"],
 .hero-logo-link {
@@ -109,7 +119,7 @@ button,
 }
 
 .app.compact-layout .panel {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
   min-height: clamp(260px, 46dvh, 420px);
   overflow: auto;
   padding: 8px;
@@ -262,6 +272,29 @@ button,
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: 0.02em;
+}
+
+.hero-time {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.hero-time-colon {
+  display: inline-block;
+  min-width: 0.38em;
+  text-align: center;
+  animation: heroColonBlink 3.6s steps(1, end) infinite;
+}
+
+@keyframes heroColonBlink {
+  0%,
+  86% {
+    opacity: 1;
+  }
+  87%,
+  100% {
+    opacity: 0.08;
+  }
 }
 
 .menu-grid {
@@ -1079,6 +1112,14 @@ button,
   transform: translateY(1px);
 }
 
+.action-btn:disabled {
+  opacity: 0.56;
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+  pointer-events: none;
+}
+
 .support-form,
 .feedback-form {
   display: grid;
@@ -1523,6 +1564,35 @@ button,
   border: 0;
   touch-action: manipulation;
   user-select: none;
+}
+
+@media (max-height: 700px) {
+  .dino-layout {
+    padding-top: 10px;
+    gap: 2px;
+  }
+
+  .dino-title {
+    margin-top: 2px;
+    font-size: clamp(1rem, 4.2vw, 1.28rem);
+  }
+
+  .game-stats {
+    margin-top: 4px;
+    margin-bottom: 6px;
+    gap: clamp(14px, 7vw, 34px);
+  }
+
+  .stat-value {
+    font-size: clamp(1.6rem, 8.2vw, 2.3rem);
+  }
+
+  .game-wrap {
+    flex: 0 0 248px;
+    height: 248px;
+    min-height: 248px;
+    max-height: 248px;
+  }
 }
 
 .result {
