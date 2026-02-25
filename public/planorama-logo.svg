@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="80" viewBox="0 0 390 80" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">Planorama</title>
+  <desc id="logoDesc">Planorama wordmark with refined rounded emblem</desc>
+
+  <defs>
+    <linearGradient id="logoMarkBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6f9ff" />
+      <stop offset="1" stop-color="#e7eefb" />
+    </linearGradient>
+    <linearGradient id="logoMarkStroke" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8ea2cc" />
+      <stop offset="1" stop-color="#6f84b0" />
+    </linearGradient>
+    <linearGradient id="logoAccent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8b9af8" stop-opacity="0.72" />
+      <stop offset="1" stop-color="#8b9af8" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(2 8)">
+    <rect x="1" y="1" width="62" height="62" rx="18" fill="url(#logoMarkBg)" stroke="url(#logoMarkStroke)" stroke-width="1.5" />
+    <path
+      d="M21.5 47V17.5H36.4c8 0 12.9 4.9 12.9 12s-4.9 12-12.9 12h-8"
+      fill="none"
+      stroke="#1d2f57"
+      stroke-width="3.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <circle cx="47.2" cy="19.4" r="2.8" fill="#7d93be" />
+  </g>
+
+  <text
+    x="84"
+    y="49"
+    fill="#0f1f3a"
+    font-family="Nunito, Montserrat, Segoe UI, Arial, sans-serif"
+    font-size="42"
+    font-weight="800"
+    letter-spacing="0.15"
+  >
+    Planorama
+  </text>
+  <path d="M85 57h188" fill="none" stroke="url(#logoAccent)" stroke-width="2" stroke-linecap="round" />
+</svg>

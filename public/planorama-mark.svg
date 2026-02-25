@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" role="img" aria-labelledby="markTitle">
+  <title id="markTitle">Planorama mark</title>
+  <rect x="1.5" y="1.5" width="37" height="37" rx="11" fill="#edf3ff" stroke="#6f84b0" stroke-width="1.5" />
+  <path
+    d="M13.5 29.5V10.5h9.4c4.9 0 7.8 2.8 7.8 7s-2.9 7-7.8 7h-5.4"
+    fill="none"
+    stroke="#122c58"
+    stroke-width="2.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="29.5" cy="12" r="2" fill="#6f84b0" />
+</svg>
